@@ -21,6 +21,7 @@ def create_app():
     # Create database tables
     # SQLite database will be created in instance folder
     with app.app_context():
+        from . import models  # Import models so they are registered with SQLAlchemy
         db.create_all()
 
     return app
