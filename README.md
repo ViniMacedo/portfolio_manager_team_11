@@ -48,3 +48,7 @@ You should see a welcome message that confirms the connection with the backend.
   - React (UI library)
   - Vite (Build tool)
   - Axios (HTTP client)
+
+
+## DB Diagram
+![DB Diagram](assets/DBDiagram_T11.png)
