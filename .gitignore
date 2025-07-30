@@ -38,6 +38,7 @@ backend/*.egg
 backend/.webassets-cache
 backend/.DS_Store
 backend/.pytest_cache/
+backend/yfinance_cache.sqlite
 
 # === GLOBAL/OS ===
 *.log
