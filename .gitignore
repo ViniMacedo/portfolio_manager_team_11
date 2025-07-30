@@ -48,4 +48,9 @@ Thumbs.db
 *.swp
 *.swo
 *.swn
+
+# === PYTHON ===
+__pycache__/
+*.py[cod]
+*$py.class
 *.bak
