@@ -330,48 +330,16 @@ const App = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview': return renderOverview();
-      case 'holdings': return renderHoldings();
-      case 'performance': return renderPerformance();
-      case 'watchlist': return renderWatchlist();
-      default: return renderOverview();
-    }
-  };
-
-  const handleCreateEntry = async () => {
-    try {
-      setLoading(true);
-      await testApi.create(`Test entry ${Date.now()}`);
-      const response = await testApi.list();
-      setEntries(response.data);
-    } catch (error) {
-      console.error('Error creating entry:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleListEntries = async () => {
-    try {
-      setLoading(true);
-      const response = await testApi.list();
-      setEntries(response.data);
-    } catch (error) {
-      console.error('Error listing entries:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClearEntries = async () => {
-    try {
-      setLoading(true);
-      await testApi.clear();
-      setEntries([]);
-    } catch (error) {
-      console.error('Error clearing entries:', error);
-    } finally {
-      setLoading(false);
+      case "overview":
+        return renderOverview();
+      case "holdings":
+        return renderHoldings();
+      case "performance":
+        return renderPerformance();
+      case "watchlist":
+        return renderWatchlist();
+      default:
+        return renderOverview();
     }
   };
 
