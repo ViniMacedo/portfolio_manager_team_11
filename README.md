@@ -51,4 +51,4 @@ You should see a welcome message that confirms the connection with the backend.
 
 
 ## DB Diagram
-![DB Diagram](assets/DBDiagram_T11.png)
+![DB Diagram](assets/db_diagram_team11.png)

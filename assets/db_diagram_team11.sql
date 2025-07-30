@@ -11,7 +11,7 @@ CREATE TABLE `transactions` (
   `product_symbol` varchar(255),
   `qty` decimal,
   `price` decimal,
-  `product_type` enum(STOCK,BOND,CASH),
+  `product_type` enum(STOCKS,BONDS,CASH),
   `type` enum(BUY,SELL),
   `transaction_date` date,
   `fee` decimal
@@ -25,12 +25,13 @@ CREATE TABLE `holdings` (
   `avg_price` decimal,
   `current_price` decimal,
   `last_updated` timestamp,
-  `product_type` enum(STOCK,BOND,CASH)
+  `product_type` enum(STOCKS,BONDS,CASH)
 );
 
 CREATE TABLE `users` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255)
+  `name` varchar(255),
+  `balance` decimal
 );
 
 ALTER TABLE `portfolios` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
