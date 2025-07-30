@@ -16,3 +16,4 @@ def get_quote(ticker):
         "price": round(latest["Close"], 2),
         "change": round((latest["Close"] / latest["Open"] - 1) * 100, 2)
     })
+
