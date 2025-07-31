@@ -2,7 +2,7 @@ from app import create_app, db
 from app.models import User, Portfolio, Transaction, Holding, ProductType, TransactionType
 from datetime import datetime, date, timezone
 from decimal import Decimal
-import pymysql
+import mysql.connector
 import os
 from dotenv import load_dotenv
 
@@ -15,7 +15,7 @@ ROOT_PASSWORD = os.getenv('DB_ROOT_PASSWORD', '123456')
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 
 # Connect as root without selecting a DB
-connection = pymysql.connect(
+connection = mysql.connector.connect(
     host=DB_HOST,
     user=ROOT_USER,
     password=ROOT_PASSWORD,
