@@ -56,7 +56,7 @@ You should see a welcome message that confirms the connection with the backend.
 ### Prerequisites
 
 - MySQL Server installed and running
-- MySQL root password set to "root" (or update config.py with your credentials)
+- MySQL root password set to "123456"
 
 ### Setup Instructions
 
