@@ -1,5 +1,4 @@
-from flask import Blueprint, jsonify, request
-from .models import TestEntry
+from flask import Blueprint
 from app import db
 
 api_bp = Blueprint('api', __name__)
