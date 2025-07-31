@@ -52,7 +52,7 @@ const App = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-3xl"></div>
         <div className="absolute top-0 right-0 w-32 h-32 lg:w-48 lg:h-48 bg-gradient-to-bl from-cyan-400/30 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-tr from-pink-400/30 to-transparent rounded-full blur-2xl"></div>
-        
+
         <div className="relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center space-x-4 lg:space-x-6">
@@ -64,7 +64,7 @@ const App = () => {
                 <p className="text-3xl lg:text-5xl font-bold text-white">${portfolioData.totalValue.toLocaleString()}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between lg:justify-end lg:space-x-8 space-x-4">
               <div className="text-center">
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
@@ -74,7 +74,7 @@ const App = () => {
                 <div className="text-white/80 text-xs lg:text-sm">Today</div>
                 <div className="text-white text-sm lg:text-lg font-bold">+${portfolioData.dayChange.toLocaleString()}</div>
               </div>
-              
+
               <div className="text-center">
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
                   <ArrowUpRight className="h-4 w-4 lg:h-6 lg:w-6 text-purple-400" />
@@ -571,16 +571,11 @@ const App = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "overview":
-        return renderOverview();
-      case "holdings":
-        return renderHoldings();
-      case "performance":
-        return renderPerformance();
-      case "watchlist":
-        return renderWatchlist();
-      default:
-        return renderOverview();
+      case 'overview': return renderOverview();
+      case 'holdings': return renderHoldings();
+      case 'performance': return renderPerformance();
+      case 'watchlist': return renderWatchlist();
+      default: return renderOverview();
     }
   };
 
