@@ -2,6 +2,31 @@ from app import create_app, db
 from app.models import User, Portfolio, Transaction, Holding, ProductType, TransactionType
 from datetime import datetime, date, timezone
 from decimal import Decimal
+import pymysql
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# DB config for root user
+DB_NAME = os.getenv('DB_NAME', 'portfolio_manager')
+ROOT_USER = os.getenv('DB_ROOT_USER', 'root')
+ROOT_PASSWORD = os.getenv('DB_ROOT_PASSWORD', '123456')
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+
+# Connect as root without selecting a DB
+connection = pymysql.connect(
+    host=DB_HOST,
+    user=ROOT_USER,
+    password=ROOT_PASSWORD,
+    autocommit=True
+)
+
+with connection.cursor() as cursor:
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_NAME};")
+    print(f"Database '{DB_NAME}' checked/created.")
+
+connection.close()
 
 app = create_app()
 

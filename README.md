@@ -56,7 +56,7 @@ You should see a welcome message that confirms the connection with the backend.
 ### Prerequisites
 
 - MySQL Server installed and running
-- MySQL root password set to "123456"
+- MySQL root password set to `"123456"` (or update your `.env` accordingly)
 
 ### Setup Instructions
 
@@ -66,20 +66,12 @@ You should see a welcome message that confirms the connection with the backend.
    - macOS: `brew install mysql && brew services start mysql`
    - Ubuntu/Debian: `sudo apt install mysql-server && sudo systemctl start mysql`
 
-2. Create Database:
+2. Initialize Database and Mock Data:
 
-   ```sql
-   mysql -u root -p
-   CREATE DATABASE portfolio_manager;
-   ```
-
-3. Initialize Database:
    ```bash
    cd backend
    python init_db.py
    ```
-
-This will create the database schema and populate it with initial mock data including:
 
 ## DB Diagram
 
