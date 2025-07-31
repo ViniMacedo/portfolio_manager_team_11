@@ -1,25 +1,29 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Api
 from .config import Config
 
 # Initialize SQLAlchemy
 db = SQLAlchemy()
 
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    
+
     # Initialize extensions
     CORS(app)
     db.init_app(app)
+    api = Api(app)  # Initialize Flask-RESTful
 
-    # Register blueprints
-    from .api import api_bp
-    app.register_blueprint(api_bp, url_prefix='/api')
+    # Register RESTful resources
+    from .api.quote import QuoteResource
+    from .api.portfolio import PortfolioResource
+    api.add_resource(QuoteResource, '/api/quote/<string:ticker>')
+    api.add_resource(PortfolioResource, '/api/portfolio/<int:portfolio_id>')
 
     # Create database tables
-    # SQLite database will be created in instance folder
     with app.app_context():
         from . import models  # Import models so they are registered with SQLAlchemy
         db.create_all()
