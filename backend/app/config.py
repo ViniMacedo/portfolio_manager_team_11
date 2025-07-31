@@ -3,6 +3,6 @@ class Config:
     # and not hardcoded in the source code. This is just for development simplicity.
     SECRET_KEY = 'dev-secret-key'
     
-    # MySQL configuration - Update these values with your MySQL credentials
+    # MySQL configuration 
     SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/portfolio_manager'
     SQLALCHEMY_TRACK_MODIFICATIONS = False

@@ -71,7 +71,7 @@ def init_mock_data():
     for transaction in mock_transactions:
         db.session.add(transaction)
 
-    # Create mock holdings (consistent with transactions)
+    # Create mock holdings 
     mock_holdings = [
         # AAPL holding (100 - 20 = 80 shares)
         Holding(
