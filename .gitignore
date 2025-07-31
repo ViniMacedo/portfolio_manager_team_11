@@ -1,11 +1,6 @@
 # === FRONTEND ===
 frontend/node_modules/
 frontend/dist/
-frontend/.env
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
 frontend/.DS_Store
 frontend/coverage/
 frontend/build/
@@ -42,12 +37,11 @@ backend/.installed.cfg
 backend/*.egg
 backend/.webassets-cache
 backend/.DS_Store
-backend/.env
 backend/.pytest_cache/
+backend/yfinance_cache.sqlite
 
 # === GLOBAL/OS ===
 *.log
-.env
 .DS_Store
 Thumbs.db
 .idea/
@@ -55,4 +49,9 @@ Thumbs.db
 *.swp
 *.swo
 *.swn
+
+# === PYTHON ===
+__pycache__/
+*.py[cod]
+*$py.class
 *.bak

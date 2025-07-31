@@ -330,11 +330,16 @@ const App = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview': return renderOverview();
-      case 'holdings': return renderHoldings();
-      case 'performance': return renderPerformance();
-      case 'watchlist': return renderWatchlist();
-      default: return renderOverview();
+      case "overview":
+        return renderOverview();
+      case "holdings":
+        return renderHoldings();
+      case "performance":
+        return renderPerformance();
+      case "watchlist":
+        return renderWatchlist();
+      default:
+        return renderOverview();
     }
   };
 
