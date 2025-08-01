@@ -82,8 +82,8 @@ class Holding(db.Model):
         return {
             'id': self.id,
             'portfolio_id': self.portfolio_id,
-            'product_symbol': self.product_symbol,
-            'qty': float(self.qty) if self.qty else 0,
+            'symbol': self.product_symbol,
+            'shares': float(self.qty) if self.qty else 0,
             'avg_price': float(self.avg_price) if self.avg_price else 0,
             'current_price': float(self.current_price) if self.current_price else 0,
             'last_updated': self.last_updated.isoformat(),
