@@ -4,5 +4,5 @@ class Config:
     SECRET_KEY = 'dev-secret-key'
     
     # MySQL configuration 
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@localhost/portfolio_manager'
+    SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://root:n3u3da!@localhost/portfolio_manager'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
