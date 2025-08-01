@@ -1,8 +1,17 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env variables
+
 class Config:
-    # NOTE: In a production environment, these values should be in environment variables
-    # and not hardcoded in the source code. This is just for development simplicity.
-    SECRET_KEY = 'dev-secret-key'
-    
-    # MySQL configuration 
-    SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://root:n3u3da!@localhost/portfolio_manager'
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+
+    # Build the SQLALCHEMY_DATABASE_URI from environment variables
+    DB_USER = os.getenv('DB_ROOT_USER', 'root')
+    DB_PASSWORD = os.getenv('DB_ROOT_PASSWORD', '123456')
+    DB_HOST = os.getenv('DB_HOST', 'localhost')
+    DB_NAME = os.getenv('DB_NAME', 'portfolio_manager')
+
+    SQLALCHEMY_DATABASE_URI = f'mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
