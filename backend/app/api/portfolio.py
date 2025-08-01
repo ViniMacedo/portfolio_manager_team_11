@@ -1,16 +1,18 @@
 from flask_restful import Resource
 from flask import request
-from app.models import db, Portfolio
+from app.models import db, Portfolio, Holding
 
 class PortfolioResource(Resource):
     def get(self, portfolio_id):
         portfolio = Portfolio.query.get(portfolio_id)
         if not portfolio:
             return {"error": "Portfolio not found"}, 404
+        holdings = Holding.query.filter_by(portfolio_id=portfolio.id).all()
         return {
             "id": portfolio.id,
             "name": portfolio.name,
-            "created_at": portfolio.created_at.isoformat()
+            "created_at": portfolio.created_at.isoformat(),
+            "holdings": [holding.to_dict() for holding in holdings]
         }
 
     def post(self):
