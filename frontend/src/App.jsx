@@ -1,42 +1,223 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity, Eye, Star, Sparkles, Zap, ArrowUpRight, Plus, Bell, Settings, Search, Calendar, FileText, Download, Share, Target, Bookmark } from 'lucide-react';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // sample data
-  const portfolioData = {
-    totalValue: 125430.50,
-    dayChange: 2845.30,
-    dayChangePercent: 2.32,
-    totalGain: 18745.50,
-    totalGainPercent: 17.5
-  };
+  // State for real data
+  const [user, setUser] = useState(null);
+  const [portfolio, setPortfolio] = useState(null);
+  const [holdings, setHoldings] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [portfolioData, setPortfolioData] = useState({
+    totalValue: 0,
+    dayChange: 0,
+    dayChangePercent: 0,
+    totalGain: 0,
+    totalGainPercent: 0
+  });
 
-  // Performance chart data
-  const performanceData = [
-    { date: 'Jan', value: 98000, change: 2.1 },
-    { date: 'Feb', value: 102000, change: 4.1 },
-    { date: 'Mar', value: 105500, change: 3.4 },
-    { date: 'Apr', value: 108200, change: 2.6 },
-    { date: 'May', value: 112800, change: 4.3 },
-    { date: 'Jun', value: 118500, change: 5.1 },
-    { date: 'Jul', value: 125430, change: 5.8 }
-  ];
+  // Performance chart data - could be calculated from transactions
+  const [performanceData, setPerformanceData] = useState([]);
 
-  const stocks = [
-    { symbol: 'AAPL', name: 'Apple Inc', shares: 50, price: 185.32, change: 2.45, changePercent: 1.34, value: 9266, color: 'from-blue-500 to-cyan-400' },
-    { symbol: 'GOOGL', name: 'Alphabet Inc', shares: 25, price: 142.87, change: -1.23, changePercent: -0.85, value: 3571.75, color: 'from-emerald-500 to-teal-400' },
-    { symbol: 'MSFT', name: 'Microsoft Corp', shares: 75, price: 378.45, change: 5.67, changePercent: 1.52, value: 28383.75, color: 'from-purple-500 to-pink-400' },
-    { symbol: 'TSLA', name: 'Tesla Inc', shares: 30, price: 248.90, change: -8.45, changePercent: -3.28, value: 7467, color: 'from-orange-500 to-red-400' },
-    { symbol: 'AMZN', name: 'Amazon.com Inc', shares: 40, price: 156.78, change: 3.21, changePercent: 2.09, value: 6271.20, color: 'from-indigo-500 to-blue-400' }
-  ];
-
+  // Placeholder watchlist (this might need a separate API endpoint)
   const watchlist = [
     { symbol: 'NVDA', name: 'NVIDIA Corp', price: 498.32, change: 12.45, changePercent: 2.56, color: 'from-green-500 to-emerald-400' },
     { symbol: 'META', name: 'Meta Platforms', price: 312.87, change: -5.43, changePercent: -1.71, color: 'from-blue-500 to-indigo-400' },
     { symbol: 'NFLX', name: 'Netflix Inc', price: 445.23, change: 8.90, changePercent: 2.04, color: 'from-red-500 to-pink-400' }
   ];
+
+  // API Base URL - adjust this to match your backend
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+  // Fetch functions
+  const fetchUserData = async (userId = 1) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch user data');
+      const userData = await response.json();
+      setUser(userData);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setError(err.message);
+    }
+  };
+
+  const fetchPortfolioData = async (userId = 1) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/portfolios/user/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch portfolio data');
+      const portfolios = await response.json();
+      // Assuming we want the first/main portfolio
+      const mainPortfolio = portfolios[0];
+      setPortfolio(mainPortfolio);
+      return mainPortfolio.id;
+    } catch (err) {
+      console.error('Error fetching portfolio data:', err);
+      setError(err.message);
+      return null;
+    }
+  };
+
+  const fetchHoldings = async (portfolioId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/holdings/portfolio/${portfolioId}`);
+      if (!response.ok) throw new Error('Failed to fetch holdings');
+      const holdingsData = await response.json();
+      setHoldings(holdingsData);
+      
+      // Calculate portfolio metrics from holdings
+      calculatePortfolioMetrics(holdingsData);
+    } catch (err) {
+      console.error('Error fetching holdings:', err);
+      setError(err.message);
+    }
+  };
+
+  const fetchTransactions = async (portfolioId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/transactions/portfolio/${portfolioId}`);
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      const transactionsData = await response.json();
+      setTransactions(transactionsData);
+      
+      // Generate performance data from transactions
+      generatePerformanceData(transactionsData);
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setError(err.message);
+    }
+  };
+
+  // Calculate portfolio metrics from holdings
+  const calculatePortfolioMetrics = (holdingsData) => {
+    const totalValue = holdingsData.reduce((sum, holding) => {
+      return sum + (parseFloat(holding.qty) * parseFloat(holding.current_price));
+    }, 0);
+
+    const totalCost = holdingsData.reduce((sum, holding) => {
+      return sum + (parseFloat(holding.qty) * parseFloat(holding.avg_price));
+    }, 0);
+
+    const totalGain = totalValue - totalCost;
+    const totalGainPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
+
+    // For demo purposes, simulate daily change (you might want to fetch this from a price API)
+    const dayChange = totalValue * 0.023; // Simulating 2.3% daily change
+    const dayChangePercent = 2.32;
+
+    setPortfolioData({
+      totalValue: totalValue,
+      dayChange: dayChange,
+      dayChangePercent: dayChangePercent,
+      totalGain: totalGain,
+      totalGainPercent: totalGainPercent
+    });
+  };
+
+  // Generate performance chart data from transactions
+  const generatePerformanceData = (transactionsData) => {
+    // This is a simplified version - you might want more sophisticated logic
+    const monthlyData = [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+    
+    // For demo purposes, generate progressive growth
+    let runningValue = 98000;
+    months.forEach((month, index) => {
+      const growth = Math.random() * 5000 + 2000; // Random growth between 2k-7k
+      runningValue += growth;
+      monthlyData.push({
+        date: month,
+        value: Math.round(runningValue),
+        change: ((growth / runningValue) * 100).toFixed(1)
+      });
+    });
+
+    setPerformanceData(monthlyData);
+  };
+
+  // Transform holdings data to match component structure
+  const transformHoldingsForDisplay = (holdingsData) => {
+    const colorPalettes = [
+      'from-blue-500 to-cyan-400',
+      'from-emerald-500 to-teal-400', 
+      'from-purple-500 to-pink-400',
+      'from-orange-500 to-red-400',
+      'from-indigo-500 to-blue-400',
+      'from-green-500 to-emerald-400',
+      'from-red-500 to-pink-400'
+    ];
+
+    return holdingsData.map((holding, index) => {
+      const currentValue = parseFloat(holding.qty) * parseFloat(holding.current_price);
+      const costBasis = parseFloat(holding.qty) * parseFloat(holding.avg_price);
+      const change = parseFloat(holding.current_price) - parseFloat(holding.avg_price);
+      const changePercent = parseFloat(holding.avg_price) > 0 ? 
+        ((change / parseFloat(holding.avg_price)) * 100) : 0;
+
+      return {
+        symbol: holding.product_symbol,
+        name: getCompanyName(holding.product_symbol), // You might want to fetch this from an API
+        shares: parseFloat(holding.qty),
+        price: parseFloat(holding.current_price),
+        change: change,
+        changePercent: parseFloat(changePercent.toFixed(2)),
+        value: currentValue,
+        color: colorPalettes[index % colorPalettes.length]
+      };
+    });
+  };
+
+  // Helper function to get company names (you might want to fetch this from an API)
+  const getCompanyName = (symbol) => {
+    const companyNames = {
+      'AAPL': 'Apple Inc',
+      'GOOGL': 'Alphabet Inc',
+      'MSFT': 'Microsoft Corp',
+      'TSLA': 'Tesla Inc',
+      'AMZN': 'Amazon.com Inc',
+      'TLT': 'iShares 20+ Year Treasury Bond ETF',
+      'NVDA': 'NVIDIA Corp',
+      'META': 'Meta Platforms Inc'
+    };
+    return companyNames[symbol] || `${symbol} Corporation`;
+  };
+
+  // Main data fetching effect
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Fetch user data
+        await fetchUserData();
+        
+        // Fetch portfolio data
+        const portfolioId = await fetchPortfolioData();
+        
+        if (portfolioId) {
+          // Fetch holdings and transactions
+          await Promise.all([
+            fetchHoldings(portfolioId),
+            fetchTransactions(portfolioId)
+          ]);
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load portfolio data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
+  // Transform holdings data for display
+  const stocks = transformHoldingsForDisplay(holdings);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Sparkles },
@@ -52,7 +233,7 @@ const App = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-3xl"></div>
         <div className="absolute top-0 right-0 w-32 h-32 lg:w-48 lg:h-48 bg-gradient-to-bl from-cyan-400/30 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-tr from-pink-400/30 to-transparent rounded-full blur-2xl"></div>
-
+        
         <div className="relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center space-x-4 lg:space-x-6">
@@ -64,7 +245,7 @@ const App = () => {
                 <p className="text-3xl lg:text-5xl font-bold text-white">${portfolioData.totalValue.toLocaleString()}</p>
               </div>
             </div>
-
+            
             <div className="flex items-center justify-between lg:justify-end lg:space-x-8 space-x-4">
               <div className="text-center">
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
@@ -74,7 +255,7 @@ const App = () => {
                 <div className="text-white/80 text-xs lg:text-sm">Today</div>
                 <div className="text-white text-sm lg:text-lg font-bold">+${portfolioData.dayChange.toLocaleString()}</div>
               </div>
-
+              
               <div className="text-center">
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
                   <ArrowUpRight className="h-4 w-4 lg:h-6 lg:w-6 text-purple-400" />
@@ -137,7 +318,7 @@ const App = () => {
         </div>
 
         {/* Enhanced Performance Section with Chart */}
-        <div className="col-span-7 flex flex-col gap-4">
+        <div className="col-span-6 flex flex-col gap-4">
           {/* Performance Metrics & Chart */}
           <div className="bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden min-h-[300px]">
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent backdrop-blur-3xl"></div>
@@ -243,7 +424,7 @@ const App = () => {
         </div>
 
         {/* Enhanced Watchlist & Actions - Premium UX */}
-        <div className="col-span-2 flex flex-col gap-4">
+        <div className="col-span-3 flex flex-col gap-4">
           {/* Premium Watchlist - Prominent Design */}
           <div className="flex-1 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-2xl p-1 shadow-2xl">
             <div className="bg-white/95 backdrop-blur-xl rounded-xl h-full flex flex-col border border-orange-200/50">
@@ -324,7 +505,7 @@ const App = () => {
       <div className="col-span-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 text-white shadow-xl">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold">Your Holdings</h2>
+            <h2 className="text-xl font-bold">{portfolio?.name || 'Your Holdings'}</h2>
             <p className="text-indigo-100 text-sm">Complete overview of your positions</p>
           </div>
           <div className="text-right">
@@ -337,64 +518,49 @@ const App = () => {
       {/* Holdings Grid - Scrollable */}
       <div className="col-span-4 row-span-2 bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-xl flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {stocks.map((stock) => (
-              <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-12 h-12 bg-gradient-to-r ${stock.color} rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-shadow duration-200`}>
-                      {stock.symbol[0]}
+          {stocks.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 mb-2">No holdings found</p>
+                <p className="text-gray-500 text-sm">Start by making your first investment</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {stocks.map((stock) => (
+                <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 bg-gradient-to-r ${stock.color} rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-shadow duration-200`}>
+                        {stock.symbol[0]}
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-900">{stock.symbol}</div>
+                        <div className="text-gray-600 text-sm">{stock.name}</div>
+                        <div className="text-xs text-gray-500">{stock.shares} shares</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-bold text-gray-900">{stock.symbol}</div>
-                      <div className="text-gray-600 text-sm">{stock.name}</div>
-                      <div className="text-xs text-gray-500">{stock.shares} shares</div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="font-bold text-gray-900 text-lg">${stock.value.toLocaleString()}</div>
-                    <div className="text-gray-600 text-sm mb-1">${stock.price}</div>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 hover:scale-105 ${
-                      stock.change >= 0 
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                        : 'bg-red-100 text-red-800 hover:bg-red-200'
-                    }`}>
-                      {stock.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                      {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%
+                    
+                    <div className="text-right">
+                      <div className="font-bold text-gray-900 text-lg">${stock.value.toLocaleString()}</div>
+                      <div className="text-gray-600 text-sm mb-1">${stock.price}</div>
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 hover:scale-105 ${
+                        stock.change >= 0 
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                          : 'bg-red-100 text-red-800 hover:bg-red-200'
+                      }`}>
+                        {stock.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                        {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            
-            {/* Additional demo holdings for scrolling */}
-            {[...Array(6)].map((_, index) => (
-              <div key={`demo-${index}`} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer opacity-60">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-gray-400 to-gray-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
-                      {String.fromCharCode(65 + index)}
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-600">STOCK{index + 1}</div>
-                      <div className="text-gray-500 text-sm">Demo Company {index + 1}</div>
-                      <div className="text-xs text-gray-400">{10 + index * 5} shares</div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="font-bold text-gray-600 text-lg">${(2000 + index * 500).toLocaleString()}</div>
-                    <div className="text-gray-500 text-sm mb-1">${100 + index * 10}</div>
-                    <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-600">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      +{(1 + index * 0.5).toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -570,6 +736,37 @@ const App = () => {
   );
 
   const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white/80">Loading portfolio data...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-red-400 text-2xl">⚠</span>
+            </div>
+            <p className="text-white/80 mb-4">Failed to load portfolio data</p>
+            <p className="text-red-400 text-sm">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl transition-all duration-200"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'overview': return renderOverview();
       case 'holdings': return renderHoldings();

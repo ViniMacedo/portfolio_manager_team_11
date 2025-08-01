@@ -1,27 +1,26 @@
 from flask import Flask
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from .config import Config
+from flask_cors import CORS
+import os
 
-# Initialize SQLAlchemy
 db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
+    
+    # Configure database
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{os.getenv('DB_ROOT_USER', 'root')}:{os.getenv('DB_ROOT_PASSWORD', '123456')}@{os.getenv('DB_HOST', 'localhost')}/{os.getenv('DB_NAME', 'portfolio_manager')}"
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
     
     # Initialize extensions
-    CORS(app)
     db.init_app(app)
-
-    # Register blueprints
-    from .api import api_bp
-    app.register_blueprint(api_bp, url_prefix='/api')
-
-    # Create database tables
-    # SQLite database will be created in instance folder
-    with app.app_context():
-        from . import models  # Import models so they are registered with SQLAlchemy
-        db.create_all()
-
+    
+    # Enable CORS for React frontend
+    CORS(app, origins=['http://localhost:3000', 'http://localhost:5173']) 
+    
+    # Register API blueprint
+    from app.routes import api
+    app.register_blueprint(api, url_prefix='/api')
+    
     return app
