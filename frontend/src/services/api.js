@@ -17,4 +17,10 @@ export const fetchPortfolioById = async (portfolioId) => {
   }
 };
 
+export async function fetchAllStocks() {
+  const resp = await fetch('/api/stocks');
+  if (!resp.ok) throw new Error('Failed to load stocks');
+  return resp.json(); 
+}
+
 export default api;
