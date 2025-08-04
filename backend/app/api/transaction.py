@@ -33,12 +33,6 @@ class TransactionResource(Resource):
         user = result['user']
         portfolio = result['portfolio']
 
-
-        # Check price
-        price_check = self._validate_price_against_market(product_symbol, float(price))
-        if price_check:
-            return price_check
-
         # Execute transaction
         match tx_type:
             case TransactionType.BUY:
@@ -51,6 +45,11 @@ class TransactionResource(Resource):
 
         if result is not None:  # Error occurred
             return result
+        
+        # Check price
+        price_check = self._validate_price_against_market(product_symbol, float(price))
+        if price_check:
+            return price_check
 
         # Log transaction
         transaction = Transaction(
