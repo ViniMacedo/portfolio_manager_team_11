@@ -1,6 +1,6 @@
 import React, { useState, useEffect  } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity, Eye, Star, Sparkles, Zap, ArrowUpRight, Plus, Bell, Settings, Search, Calendar, FileText, Download, Share, Target, Bookmark, X, LineChart } from 'lucide-react';
-import { fetchPortfolioById, fetchAllStocks  } from './services/api';
+import { fetchPortfolioById, fetchAllStocks, tradeStock  } from './services/api';
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [portfolio, setPortfolio] = useState({ holdings: [] });
@@ -8,10 +8,29 @@ const App = () => {
   const [browsableStocks, setBrowsableStocks] = useState([]);
   const [filteredStocks, setFilteredStocks] = useState([]);
   const [selectedStock, setSelectedStock]     = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
     fetchPortfolioById(1).then(setPortfolio);
+    fetchUserById(1).then(setUserInfo);
   }, []);
+
+
+  const handleTradeStock = async (stockSymbol, action, quantity, price) => {
+    if (!userInfo) {
+      console.error('User information is not available');
+      return;
+    }
+
+    const userBalance = userInfo.balance;
+
+    try {
+      const result = await tradeStock(stockSymbol, action, quantity, price, portfolio.id, userBalance);
+      console.log('Trade successful:', result);
+    } catch (error) {
+      console.error('Trade failed:', error);
+    }
+  }
 
   // sample data
   const portfolioData = {
