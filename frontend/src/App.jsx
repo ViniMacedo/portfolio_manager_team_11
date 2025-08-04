@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity, Eye, Star, Sparkles, Zap, ArrowUpRight, Plus, Bell, Settings, Search, Calendar, FileText, Download, Share, Target, Bookmark } from 'lucide-react';
-import { fetchPortfolioById } from './services/api';
+import React, { useState, useEffect  } from 'react';
+import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity, Eye, Star, Sparkles, Zap, ArrowUpRight, Plus, Bell, Settings, Search, Calendar, FileText, Download, Share, Target, Bookmark, X, LineChart } from 'lucide-react';
+import { fetchPortfolioById, fetchAllStocks  } from './services/api';
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [portfolio, setPortfolio] = useState({ holdings: [] });
+  const [searchQuery, setSearchQuery]       = useState('');
+  const [browsableStocks, setBrowsableStocks] = useState([]);
+  const [filteredStocks, setFilteredStocks] = useState([]);
+  const [selectedStock, setSelectedStock]     = useState(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchPortfolioById(1).then(setPortfolio);
   }, []);
 
@@ -41,20 +45,32 @@ const App = () => {
     { id: 'watchlist', label: 'Watchlist', icon: Eye },
     { id: 'browse', label: 'Browse Stocks', icon: Search }
   ];
+  // fetch stock
+  useEffect(() => {
+    fetchAllStocks()
+      .then(stocks => {
+        setBrowsableStocks(stocks);
+        setFilteredStocks(stocks);
+      })
+      .catch(console.error);
+  }, []);
+
 
   // Initialize with all stocks and filter based on search
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredStocks(browsableStocks);
     } else {
-      const filtered = browsableStocks.filter(stock => 
-        stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.sector.toLowerCase().includes(searchQuery.toLowerCase())
+      const q = searchQuery.toLowerCase();
+      setFilteredStocks(
+        browsableStocks.filter(s =>
+          s.symbol.toLowerCase().includes(q) ||
+          s.name.toLowerCase().includes(q) ||
+          s.sector.toLowerCase().includes(q)
+        )
       );
-      setFilteredStocks(filtered);
     }
-  }, [searchQuery]);
+  }, [searchQuery, browsableStocks]);
 
   // Generate sample chart data for selected stock
   const generateChartData = (stock) => {
