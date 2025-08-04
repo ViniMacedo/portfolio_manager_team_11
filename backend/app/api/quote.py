@@ -21,3 +21,14 @@ class QuoteResource(Resource):
             if e.response.status_code == 429:
                 return {"error": "Rate limit exceeded. Please try again later."}, 429
             return {"error": str(e)}, 500
+        
+    @staticmethod
+    def get_current_price(ticker):
+        try:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(period="1d")
+            if hist.empty:
+                return None
+            return float(hist.iloc[-1]["Close"])
+        except Exception:
+            return None
