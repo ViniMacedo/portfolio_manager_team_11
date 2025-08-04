@@ -23,13 +23,16 @@ class TransactionResource(Resource):
             return {'error': f'Invalid input: {str(e)}'}, 400
 
         fee = Decimal("0.00") # TODO?
-        product_type = ProductType.STOCKS
+        product_type = ProductType.STOCKS # TODO: support other product types
 
         # Get user and portfolio
-        result = self._get_user_and_portfolio(user_id, portfolio_id)
-        if isinstance(result, tuple):
-            return result
-        user, portfolio = result
+        result, status = self._get_user_and_portfolio(user_id, portfolio_id)
+        if status != 200:
+            return result, status
+
+        user = result['user']
+        portfolio = result['portfolio']
+
 
         # Check price
         price_check = self._validate_price_against_market(product_symbol, float(price))
@@ -63,7 +66,11 @@ class TransactionResource(Resource):
         db.session.add(transaction)
         db.session.commit()
 
-        return {'message': f'{tx_type.value} transaction completed successfully'}
+        return {
+            'message': f'{tx_type.value} transaction completed successfully',
+            'user': user.to_dict(),
+            'portfolio': portfolio.to_dict()
+        }
 
     def _get_user_and_portfolio(self, user_id, portfolio_id):
         user = User.query.get(user_id)
@@ -77,7 +84,8 @@ class TransactionResource(Resource):
         if portfolio.user_id != user.id:
             return {'error': 'Portfolio does not belong to user'}, 403
 
-        return user, portfolio
+        return {'user': user, 'portfolio': portfolio}, 200
+
 
     def _validate_price_against_market(self, symbol, user_price):
         market_price = QuoteResource.get_current_price(symbol)
