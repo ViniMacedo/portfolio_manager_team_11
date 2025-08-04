@@ -1,4 +1,4 @@
-from backend.app.api.quote import QuoteResource
+from app.api.quote import QuoteResource
 from flask_restful import Resource
 from flask import request
 from app.models import db, Portfolio, Transaction, Holding, User, ProductType, TransactionType
