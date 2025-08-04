@@ -37,12 +37,14 @@ class TransactionResource(Resource):
             return price_check
 
         # Execute transaction
-        if tx_type == TransactionType.BUY:
-            result = self._handle_buy(user, portfolio.id, product_symbol, qty, price, fee, product_type)
-        elif tx_type == TransactionType.SELL:
-            result = self._handle_sell(user, portfolio.id, product_symbol, qty, price, fee)
-        else:
-            return {'error': 'Unsupported transaction type'}, 400
+        match tx_type:
+            case TransactionType.BUY:
+                result = self._handle_buy(user, portfolio.id, product_symbol, qty, price, fee, product_type)
+            case TransactionType.SELL:
+                result = self._handle_sell(user, portfolio.id, product_symbol, qty, price, fee)
+            case _:
+                return {'error': 'Unsupported transaction type'}, 400
+
 
         if result is not None:  # Error occurred
             return result
