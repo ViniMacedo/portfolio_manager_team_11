@@ -1,9 +1,8 @@
-from time import timezone
 from app.api.quote import QuoteResource
 from flask_restful import Resource
 from flask import request
 from app.models import db, Portfolio, Transaction, Holding, User, ProductType, TransactionType
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
     
 class TransactionResource(Resource):
@@ -66,10 +65,8 @@ class TransactionResource(Resource):
         db.session.commit()
 
         return {
-            'message': f'{tx_type.value} transaction completed successfully',
-            'user': user.to_dict(),
-            'portfolio': portfolio.to_dict()
-        }
+            "transaction_id": transaction.id
+        }, 201
 
     def _get_user_and_portfolio(self, user_id, portfolio_id):
         user = User.query.get(user_id)
