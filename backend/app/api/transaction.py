@@ -1,8 +1,9 @@
+from time import timezone
 from app.api.quote import QuoteResource
 from flask_restful import Resource
 from flask import request
 from app.models import db, Portfolio, Transaction, Holding, User, ProductType, TransactionType
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
     
 class TransactionResource(Resource):
@@ -42,10 +43,9 @@ class TransactionResource(Resource):
             case _:
                 return {'error': 'Unsupported transaction type'}, 400
 
-
         if result is not None:  # Error occurred
             return result
-        
+
         # Check price
         price_check = self._validate_price_against_market(product_symbol, float(price))
         if price_check:
@@ -85,7 +85,6 @@ class TransactionResource(Resource):
 
         return {'user': user, 'portfolio': portfolio}, 200
 
-
     def _validate_price_against_market(self, symbol, user_price):
         market_price = QuoteResource.get_current_price(symbol)
         if market_price is None:
@@ -108,11 +107,13 @@ class TransactionResource(Resource):
             return {'error': 'Insufficient balance'}, 400
 
         holding = Holding.query.filter_by(portfolio_id=portfolio_id, product_symbol=symbol).first()
+
         if holding:
             new_total_qty = holding.qty + qty
             holding.avg_price = ((holding.avg_price * holding.qty) + (price * qty)) / new_total_qty
             holding.qty = new_total_qty
             holding.current_price = price
+            holding.last_updated = datetime.now(timezone.utc)
         else:
             holding = Holding(
                 portfolio_id=portfolio_id,
@@ -120,7 +121,8 @@ class TransactionResource(Resource):
                 qty=qty,
                 avg_price=price,
                 current_price=price,
-                product_type=product_type
+                product_type=product_type,
+                last_updated=datetime.now(timezone.utc)
             )
             db.session.add(holding)
 
@@ -135,6 +137,7 @@ class TransactionResource(Resource):
         total_gain = qty * price - fee
         holding.qty -= qty
         holding.current_price = price
+        holding.last_updated = datetime.now(timezone.utc)
 
         if holding.qty == 0:
             db.session.delete(holding)
