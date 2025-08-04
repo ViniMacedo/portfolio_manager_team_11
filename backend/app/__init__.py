@@ -20,10 +20,12 @@ def create_app():
     # Register RESTful resources
     from .api.quote import QuoteResource
     from .api.portfolio import PortfolioResource
+    from .api.transaction import TransactionResource
     from .api.user import UserResource
     api.add_resource(QuoteResource, '/api/quote/<string:ticker>')
-    api.add_resource(UserResource, '/api/user/<int:user_id>')
     api.add_resource(PortfolioResource, '/api/portfolio/<int:portfolio_id>')
+    api.add_resource(TransactionResource, '/api/transaction')
+    api.add_resource(UserResource, '/api/user/<int:user_id>')
 
     # Create database tables
     with app.app_context():

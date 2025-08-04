@@ -1,6 +1,6 @@
 import React, { useState, useEffect  } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity, Eye, Star, Sparkles, Zap, ArrowUpRight, Plus, Bell, Settings, Search, Calendar, FileText, Download, Share, Target, Bookmark, X, LineChart } from 'lucide-react';
-import { fetchPortfolioById, fetchAllStocks, tradeStock  } from './services/api';
+import { fetchPortfolioById, fetchAllStocks, tradeStock, fetchUserById  } from './services/api';
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [portfolio, setPortfolio] = useState({ holdings: [] });
