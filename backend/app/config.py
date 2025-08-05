@@ -8,7 +8,7 @@ class Config:
 
     # Build the SQLALCHEMY_DATABASE_URI from environment variables
     DB_USER = os.getenv('DB_ROOT_USER', 'root')
-    DB_PASSWORD = os.getenv('DB_ROOT_PASSWORD', '123456')
+    DB_PASSWORD = os.getenv('DB_ROOT_PASSWORD', 'n3u3da!')
     DB_HOST = os.getenv('DB_HOST', 'localhost')
     DB_NAME = os.getenv('DB_NAME', 'portfolio_manager')
 

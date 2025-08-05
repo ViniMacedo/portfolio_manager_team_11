@@ -25,26 +25,6 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
     }
   }, [loading, hasMoreStocks, searchQuery, loadMoreStocks]);
 
-  const formatMarketCap = (value) => {
-    if (value >= 1000000000000) {
-      return `$${(value / 1000000000000).toFixed(2)}T`;
-    } else if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(2)}B`;
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    return `$${value.toLocaleString()}`;
-  };
-
-  const formatVolume = (value) => {
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}K`;
-    }
-    return value.toLocaleString();
-  };
-
   return (
     <div className="flex flex-col gap-6 h-full">
       {/* Search Header with Enhanced Glassmorphism */}
@@ -141,9 +121,9 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
                         
                         <div className="text-right">
                           <div className="font-bold text-gray-900 text-xl drop-shadow-sm">${(stock.price || 0).toFixed(2)}</div>
-                          <div className={`text-sm font-bold flex items-center justify-end ${(stock.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {(stock.changePercent || 0) >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                            {(stock.changePercent || 0) >= 0 ? '+' : ''}{(stock.changePercent || 0).toFixed(2)}%
+                          <div className={`text-sm font-bold flex items-center justify-end ${((stock.change / stock.price * 100) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {((stock.change / stock.price * 100) || 0) >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
+                            {((stock.change / stock.price * 100) || 0) >= 0 ? '+' : ''}{((stock.change / stock.price * 100) || 0).toFixed(2)}%
                           </div>
                         </div>
                       </div>
@@ -151,11 +131,11 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
                       <div className="glass-stock-content space-y-3 text-sm text-gray-700 p-4">
                         <div className="flex justify-between">
                           <span className="font-medium">Market Cap:</span>
-                          <span className="font-bold">{formatMarketCap(stock.marketCap || 0)}</span>
+                          <span className="font-bold">{stock.marketCap || 0}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Volume:</span>
-                          <span className="font-bold">{formatVolume(stock.volume || 0)}</span>
+                          <span className="font-bold">{stock.volume || 0}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Sector:</span>
