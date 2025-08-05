@@ -3,20 +3,30 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
 
 const Holdings = ({ portfolio, setSelectedStock }) => {
   return (
-    <div className="grid grid-cols-4 grid-rows-3 gap-4 h-full">
-      {/* Header Card - Much Smaller */}
-      <div className="col-span-4 glass-card p-2 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold">Holdings</h2>
-            <p className="text-white/70 text-xs">{portfolio.holdings.length} positions</p>
+    <div className="flex flex-col gap-6 h-full">
+      {/* Header with Browse Banner Style */}
+      <div className="glass-search-header">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-400/10 backdrop-blur-3xl"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-white/5 backdrop-blur-sm"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-white text-3xl font-bold tracking-tight drop-shadow-lg">Holdings</h2>
+              <p className="text-white/90 text-lg font-medium">{portfolio.holdings.length} positions in your portfolio</p>
+            </div>
+            <div className="text-right">
+              <div className="text-white text-2xl font-bold drop-shadow-lg">
+                ${portfolio.holdings.reduce((total, stock) => total + (stock.shares * stock.current_price), 0).toFixed(2)}
+              </div>
+              <p className="text-white/80 text-sm font-medium">Total Value</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Holdings Grid - Scrollable with 4 columns */}
-      <div className="col-span-4 row-span-2 glass-data-grid">
-        <div className="flex-1 overflow-y-auto p-4">
+      <div className="glass-data-grid flex-1">
+        <div className="h-full overflow-y-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {portfolio.holdings.map((stock) => {
               const value = stock.shares * stock.current_price;

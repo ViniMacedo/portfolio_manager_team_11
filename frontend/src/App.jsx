@@ -293,7 +293,7 @@ const App = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} />;
+        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} />;
       case "holdings":
         return <Holdings portfolio={portfolio} setSelectedStock={setSelectedStock} />;
       case "performance":
@@ -311,7 +311,7 @@ const App = () => {
           hasMoreStocks={hasMoreStocks}
         />;
       default:
-        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} />;
+        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} />;
     }
   };
 

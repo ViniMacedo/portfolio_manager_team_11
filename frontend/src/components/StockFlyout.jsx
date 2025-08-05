@@ -91,10 +91,10 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
               <h2 className="text-3xl font-bold">{stock.symbol}</h2>
               <p className="text-lg opacity-90">{stock.name}</p>
               <p className="text-sm opacity-75">{stock.sector || 'Unknown'}</p>
-              {/* Holdings info in header */}
+              {/* Holdings info in header - browse banner style */}
               {currentShares > 0 && (
-                <div className="mt-3 glass-button bg-white/10 px-4 py-2 rounded-lg border border-white/20 inline-block">
-                  <div className="text-sm font-semibold">
+                <div className="mt-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-2xl rounded-2xl px-4 py-2 shadow-lg border border-white/30 inline-block">
+                  <div className="text-sm font-medium">
                     You own {currentShares} shares • Value: ${(currentShares * (stock.price || 0)).toFixed(2)}
                   </div>
                 </div>

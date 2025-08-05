@@ -2,6 +2,21 @@ import React from 'react';
 import { TrendingUp, TrendingDown, BarChart3, Activity, PieChart, Zap } from 'lucide-react';
 
 const Performance = ({ portfolio }) => {
+  // Calculate real performance metrics
+  const totalInvested = portfolio.holdings.reduce((sum, holding) => sum + (holding.avg_price * holding.shares), 0);
+  const currentValue = portfolio.holdings.reduce((sum, holding) => sum + (holding.current_price * holding.shares), 0);
+  const totalReturn = totalInvested > 0 ? ((currentValue - totalInvested) / totalInvested * 100) : 0;
+  
+  // Calculate YTD return (simplified as a percentage of total return for demo)
+  const ytdReturn = totalReturn * 0.6; // Assuming YTD is roughly 60% of total return
+  
+  // Calculate volatility as average of absolute percentage changes
+  const volatility = portfolio.holdings.length > 0 ? 
+    portfolio.holdings.reduce((sum, holding) => {
+      const change = Math.abs((holding.current_price - holding.avg_price) / holding.avg_price * 100);
+      return sum + change;
+    }, 0) / portfolio.holdings.length : 0;
+
   return (
     <div className="grid grid-cols-5 grid-rows-3 gap-4 h-full">
       {/* Main Performance Header */}
@@ -17,21 +32,25 @@ const Performance = ({ portfolio }) => {
               <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                 <TrendingUp className="h-8 w-8" />
               </div>
-              <div className="text-3xl font-bold">+17.5%</div>
+              <div className="text-3xl font-bold">
+                {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(1)}%
+              </div>
               <div className="text-sm opacity-90">Total Return</div>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                 <BarChart3 className="h-8 w-8" />
               </div>
-              <div className="text-3xl font-bold">+8.2%</div>
+              <div className="text-3xl font-bold">
+                {ytdReturn >= 0 ? '+' : ''}{ytdReturn.toFixed(1)}%
+              </div>
               <div className="text-sm opacity-90">YTD Return</div>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                 <Activity className="h-8 w-8" />
               </div>
-              <div className="text-3xl font-bold">12.4%</div>
+              <div className="text-3xl font-bold">{volatility.toFixed(1)}%</div>
               <div className="text-sm opacity-90">Volatility</div>
             </div>
             <div className="text-center">

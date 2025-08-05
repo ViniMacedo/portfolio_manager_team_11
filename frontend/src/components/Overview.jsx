@@ -2,7 +2,13 @@ import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, ArrowUpRight, Activity, Zap, Eye, Plus, FileText, Download, Share, Target, Calendar, Bookmark } from 'lucide-react';
 
 
-const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handleTradeStock }) => {
+const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handleTradeStock, setActiveTab }) => {
+  // Calculate real portfolio value from holdings
+  const realTotalValue = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.current_price), 0) || 0;
+  const realTotalInvested = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.avg_price), 0) || 0;
+  const realTotalGain = realTotalValue - realTotalInvested;
+  const realTotalGainPercent = realTotalInvested > 0 ? ((realTotalGain / realTotalInvested) * 100).toFixed(1) : 0;
+
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
       {/* Portfolio Value - Full Width Header */}
@@ -19,7 +25,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-white/80 text-xs sm:text-sm lg:text-lg">Total Portfolio Value</h2>
-                <p className="text-xl sm:text-3xl lg:text-5xl font-bold text-white truncate">${portfolioData.totalValue.toLocaleString()}</p>
+                <p className="text-xl sm:text-3xl lg:text-5xl font-bold text-white truncate">${realTotalValue.toLocaleString()}</p>
               </div>
             </div>
             
@@ -37,9 +43,9 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
                   <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6 text-purple-400" />
                 </div>
-                <div className="text-sm sm:text-lg lg:text-2xl font-bold text-purple-400">+{portfolioData.totalGainPercent}%</div>
+                <div className="text-sm sm:text-lg lg:text-2xl font-bold text-purple-400">+{realTotalGainPercent}%</div>
                 <div className="text-white/80 text-xs lg:text-sm">All Time</div>
-                <div className="text-white text-xs sm:text-sm lg:text-lg font-bold">+${portfolioData.totalGain.toLocaleString()}</div>
+                <div className="text-white text-xs sm:text-sm lg:text-lg font-bold">+${realTotalGain.toLocaleString()}</div>
               </div>
               
               <div className="text-center min-w-0">
@@ -65,7 +71,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-purple-600" />
                 <span>Holdings</span>
               </div>
-              <div className="text-xs lg:text-sm text-purple-600 font-semibold">${portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.current_price), 0).toLocaleString() || '0'}</div>
+              <div className="text-xs lg:text-sm text-purple-600 font-semibold">${realTotalValue.toLocaleString()}</div>
             </h3>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
@@ -111,28 +117,28 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 Performance Analytics
               </h3>
               
-              {/* Metrics Row */}
+              {/* Metrics Row - Using Real Data */}
               <div className="grid grid-cols-3 gap-6 mb-6">
                 <div className="text-center">
                   <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                     <TrendingUp className="h-6 w-6" />
                   </div>
-                  <div className="text-2xl font-bold mb-1">+17.5%</div>
+                  <div className="text-2xl font-bold mb-1">+{realTotalGainPercent}%</div>
                   <div className="text-sm opacity-90">Total Return</div>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                     <Activity className="h-6 w-6" />
                   </div>
-                  <div className="text-2xl font-bold mb-1">+8.2%</div>
-                  <div className="text-sm opacity-90">YTD Return</div>
+                  <div className="text-2xl font-bold mb-1">{portfolioData.dayChangePercent}%</div>
+                  <div className="text-sm opacity-90">Today's Return</div>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                     <BarChart3 className="h-6 w-6" />
                   </div>
-                  <div className="text-2xl font-bold mb-1">12.4%</div>
-                  <div className="text-sm opacity-90">Volatility</div>
+                  <div className="text-2xl font-bold mb-1">${(realTotalValue / (portfolio.holdings?.length || 1)).toFixed(0)}</div>
+                  <div className="text-sm opacity-90">Avg Position</div>
                 </div>
               </div>
 
@@ -157,9 +163,9 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                   ))}
                 </div>
                 <div className="flex justify-between items-center text-xs opacity-75">
-                  <span>$98k</span>
+                  <span>${Math.min(...performanceData.map(d => d.value)).toLocaleString()}</span>
                   <span className="font-semibold text-green-300">+{portfolioData.totalGainPercent}% Growth</span>
-                  <span>$125k</span>
+                  <span>${Math.max(...performanceData.map(d => d.value)).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -262,9 +268,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
               <div className="space-y-2">
                 <button 
                   onClick={() => {
-                    // For now, this could open a stock selection modal or redirect to browse
-                    // Example: handleTradeStock('AAPL', 'buy', 1, 150.00)
-                    console.log('Buy Order clicked - would open stock selection');
+                    setActiveTab('browse');
                   }}
                   className="w-full bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-xl p-2 text-center transition-all duration-200 border border-white/30 hover:scale-105 active:scale-95 group"
                 >
