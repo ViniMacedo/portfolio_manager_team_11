@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchPortfolioById, fetchAllStocks, tradeStock, fetchUserById } from './services/api';
+import { fetchPortfolioById, tradeStock, fetchUserById, fetchStockBySymbol } from './services/api';
 
 // Import components
 import Header from './components/Header';
@@ -9,6 +9,7 @@ import Performance from './components/Performance';
 import Watchlist from './components/Watchlist';
 import BrowseStocks from './components/BrowseStocks';
 import StockFlyout from './components/StockFlyout';
+import { all } from 'axios';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -39,11 +40,11 @@ const App = () => {
     try {
       const result = await tradeStock(
         userInfo.id,
-        stockSymbol, 
-        action, 
-        quantity, 
-        price, 
-        portfolio.id
+        portfolio.id,
+        stockSymbol,
+        quantity,
+        price,
+        action
       );
       console.log('Trade successful:', result);
       
@@ -57,6 +58,31 @@ const App = () => {
       throw error;
     }
   }
+
+  useEffect(() => {
+    const fetchAndUpdateStock = async () => {
+      if (!selectedStock || !selectedStock.symbol) return;
+      try {
+        const stockData = await fetchStockBySymbol(selectedStock.symbol);
+        if (allStocks.some(s => s.symbol === stockData.symbol)) {
+          const prevStocks = allStocks.filter(s => s.symbol === stockData.symbol);
+          stockData.color = prevStocks[0].color;
+        } else {
+          stockData.color = 'from-blue-500 to-blue-600'; // Default color if not found
+        }
+        setAllStocks(prev => {
+          const otherStocks = prev.filter(s => s.symbol !== stockData.symbol);
+          return [...otherStocks, stockData];
+        });
+
+        setSelectedStock(stockData);
+      } catch (error) {
+        console.error(`Error on fetching ${selectedStock.symbol}:`, error);
+      }
+    };
+
+    fetchAndUpdateStock();
+  }, [selectedStock?.symbol]);
 
   // Sample data (keeping existing data structure)
   const portfolioData = {
@@ -195,7 +221,6 @@ const App = () => {
       { symbol: 'APD', name: 'Air Products', sector: 'Materials' },
       { symbol: 'SYK', name: 'Stryker Corp', sector: 'Healthcare' },
       { symbol: 'COF', name: 'Capital One Financial', sector: 'Financial Services' },
-      { symbol: 'FISV', name: 'Fiserv Inc', sector: 'Technology' },
       { symbol: 'EOG', name: 'EOG Resources', sector: 'Energy' },
       { symbol: 'EL', name: 'Estee Lauder', sector: 'Consumer Discretionary' },
       { symbol: 'MCO', name: 'Moody\'s Corp', sector: 'Financial Services' },
@@ -207,27 +232,37 @@ const App = () => {
       { symbol: 'COP', name: 'ConocoPhillips', sector: 'Energy' }
     ];
 
-    return stockData.map((stock, index) => ({
-      ...stock,
-      price: Math.random() * 400 + 50, // Random price between $50-$450
-      change: (Math.random() - 0.5) * 20, // Random change between -$10 to +$10
-      changePercent: (Math.random() - 0.5) * 8, // Random change between -4% to +4%
-      marketCap: Math.random() * 2000000000000 + 100000000000, // Random market cap
-      volume: Math.random() * 80000000 + 5000000, // Random volume
-      color: colors[index % colors.length]
-    }));
+    const fetchDetailedStocks = async (stockData) => {
+      const detailedStocks = await Promise.all(
+        stockData.map(async (stock, index) => {
+          const detailedStock = await fetchStockBySymbol(stock.symbol);
+          return {
+            ...detailedStock,
+            color: colors[index % colors.length]
+          };
+        })
+      );
+
+      return detailedStocks;
+    };              
+
+    return fetchDetailedStocks(stockData);
   };
 
   // Fetch stock data - using comprehensive stock database
   useEffect(() => {
     console.log('Setting up comprehensive stock database...');
-    const allStocksData = createComprehensiveStockDatabase();
-    setAllStocks(allStocksData);
     
-    // Load initial page
-    const initialStocks = allStocksData.slice(0, STOCKS_PER_PAGE);
-    setBrowsableStocks(initialStocks);
-    setFilteredStocks(initialStocks);
+    const loadStockData = async () => {
+      const allStocksData = await createComprehensiveStockDatabase();
+      setAllStocks(allStocksData);
+
+      const initialStocks = allStocksData.slice(0, STOCKS_PER_PAGE);
+      setBrowsableStocks(initialStocks);
+      setFilteredStocks(initialStocks);
+    };
+
+    loadStockData();
   }, []);
 
   // Load more stocks function
