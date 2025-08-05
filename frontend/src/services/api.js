@@ -18,9 +18,14 @@ export const fetchPortfolioById = async (portfolioId) => {
 };
 
 export async function fetchAllStocks() {
-  const resp = await fetch('/stocks');
-  if (!resp.ok) throw new Error('Failed to load stocks');
-  return resp.json(); 
+  try {
+    const response = await api.get('/stocks');
+    console.log('Fetched all stocks:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all stocks:', error);
+    throw error;
+  }
 }
 
 export async function fetchStockBySymbol(stockSymbol) {
@@ -43,16 +48,17 @@ export async function fetchUserById(userId) {
   }
 }
 
-export async function tradeStock(userId, productSymbol, type, qty, price, portfolioId) {
+export async function tradeStock(stockSymbol, action, quantity, price, portfolioId, userBalance) {
   try {
     const resp = await api.post('/transaction', {
-      user_id: userId,
-      product_symbol: productSymbol,
-      type,
-      qty,
-      price,
-      portfolio_id: portfolioId
+      product_symbol: stockSymbol,
+      type: action,
+      qty: quantity,
+      price: price,
+      portfolio_id: portfolioId,
+      user_balance: userBalance
     });
+    console.log('Trade executed:', resp.data);
     return resp.data;
   } catch (error) {
     console.error('Error trading stock:', error);
