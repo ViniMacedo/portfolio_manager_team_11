@@ -295,7 +295,7 @@ const App = () => {
       case "overview":
         return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} />;
       case "holdings":
-        return <Holdings portfolio={portfolio} />;
+        return <Holdings portfolio={portfolio} setSelectedStock={setSelectedStock} />;
       case "performance":
         return <Performance portfolio={portfolio} />;
       case "watchlist":

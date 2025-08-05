@@ -64,9 +64,9 @@ const Performance = ({ portfolio }) => {
                   <div key={stock.symbol} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
                     <div className="flex items-center space-x-4">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg hover:shadow-xl transition-shadow duration-200 ${
-                        index === 0 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
+                        index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
                         index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
-                        index === 2 ? 'bg-gradient-to-r from-orange-400 to-red-500' :
+                        index === 2 ? 'bg-gradient-to-r from-purple-400 to-purple-500' :
                         'bg-gradient-to-r from-gray-300 to-gray-400'
                       }`}>
                         {index + 1}

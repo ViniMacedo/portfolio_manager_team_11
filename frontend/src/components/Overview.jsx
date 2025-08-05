@@ -182,23 +182,23 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <div className="text-xs font-semibold text-gray-700">Export</div>
               </button>
               
-              <button className="bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-blue-200 group">
+              <button className="glass-button text-center">
                 <Share className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Share</div>
               </button>
               
-              <button className="bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-orange-200 group">
-                <Target className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
+              <button className="glass-button text-center">
+                <Target className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Goals</div>
               </button>
               
-              <button className="bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-purple-200 group">
+              <button className="glass-button text-center">
                 <Calendar className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Calendar</div>
               </button>
               
-              <button className="bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-yellow-200 group">
-                <Bookmark className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-yellow-600 group-hover:scale-110 transition-transform duration-200" />
+              <button className="glass-button text-center">
+                <Bookmark className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-cyan-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Saved</div>
               </button>
             </div>
@@ -207,22 +207,22 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
 
         {/* Enhanced Watchlist & Actions - Premium UX */}
         <div className="col-span-12 md:col-span-4 lg:col-span-2 flex flex-col gap-3 min-h-0 max-h-full">
-          {/* Premium Watchlist - Prominent Design */}
-          <div className="flex-1 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-2xl p-1 shadow-2xl min-h-0 max-h-full">
-            <div className="bg-white/95 backdrop-blur-xl rounded-xl h-full flex flex-col border border-orange-200/50 min-h-0">
-              <div className="p-3 border-b border-orange-200/50 bg-gradient-to-r from-orange-50 to-amber-50 rounded-t-xl flex-shrink-0">
+          {/* Premium Watchlist - Glassmorphism Design */}
+          <div className="flex-1 glass-container min-h-0 max-h-full">
+            <div className="glass-panel h-full flex flex-col min-h-0">
+              <div className="p-3 border-b border-white/20 glass-gradient-section rounded-t-xl flex-shrink-0">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="text-sm lg:text-lg font-bold text-gray-900 flex items-center">
-                    <Eye className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-orange-600" />
+                    <Eye className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-purple-600" />
                     Watchlist
                   </h3>
-                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
                 </div>
-                <p className="text-xs text-orange-700 font-medium">Market opportunities</p>
+                <p className="text-xs text-purple-700 font-medium">Market opportunities</p>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
                 {watchlist.map((stock) => (
-                  <div key={stock.symbol} className="bg-gradient-to-r from-white to-orange-50 rounded-xl p-2 shadow-sm border border-orange-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer group">
+                  <div key={stock.symbol} className="glass-watchlist-item">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 min-w-0 flex-1">
                         <div className={`w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-r ${stock.color} rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg group-hover:shadow-xl transition-shadow duration-200`}>
@@ -243,7 +243,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                     </div>
                   </div>
                 ))}
-                <button className="w-full bg-gradient-to-r from-orange-100 to-amber-100 hover:from-orange-200 hover:to-amber-200 text-orange-800 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-orange-200 font-semibold text-xs lg:text-sm">
+                <button className="w-full glass-button-secondary text-xs lg:text-sm">
                   <Plus className="h-3 w-3 lg:h-4 lg:w-4 inline mr-2" />
                   Add Symbol
                 </button>
