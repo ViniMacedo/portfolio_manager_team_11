@@ -2,7 +2,7 @@
 // You can modify these settings to customize the AI Assistant behavior
 
 export const AI_CONFIG = {
-  model: 'openrouter/horizon-beta', 
+  model: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free', // Working free model 
 
   // Response Settings
   maxTokens: 300,     // max response length

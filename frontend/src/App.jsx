@@ -203,7 +203,6 @@ const App = () => {
     ];
 
     const stockData = [
-      // Top 50+ Popular Stocks
       { symbol: 'AAPL', name: 'Apple Inc', sector: 'Technology' },
       { symbol: 'GOOGL', name: 'Alphabet Inc', sector: 'Technology' },
       { symbol: 'MSFT', name: 'Microsoft Corp', sector: 'Technology' },
@@ -275,7 +274,6 @@ const App = () => {
       { symbol: 'NOW', name: 'ServiceNow Inc', sector: 'Technology' },
       { symbol: 'GE', name: 'General Electric', sector: 'Industrials' },
       { symbol: 'ADP', name: 'Automatic Data Processing', sector: 'Technology' },
-      // Additional stocks to reach 100+
       { symbol: 'CCI', name: 'Crown Castle', sector: 'Real Estate' },
       { symbol: 'TJX', name: 'TJX Companies', sector: 'Consumer Discretionary' },
       { symbol: 'USB', name: 'U.S. Bancorp', sector: 'Financial Services' },

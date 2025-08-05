@@ -12,50 +12,50 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
-      {/* Portfolio Value - Full Width Header */}
-      <div className="glass-gradient-header rounded-2xl p-3 lg:p-4 flex-shrink-0">
+      {/* Portfolio Value - Compact Header */}
+      <div className="glass-gradient-header rounded-xl p-3 lg:p-4 flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-3xl"></div>
-        <div className="absolute top-0 right-0 w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-bl from-cyan-400/30 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-16 h-16 lg:w-24 lg:h-24 bg-gradient-to-tr from-pink-400/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-16 h-16 lg:w-24 lg:h-24 bg-gradient-to-bl from-cyan-400/30 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-tr from-pink-400/30 to-transparent rounded-full blur-xl"></div>
 
         <div className="relative z-10">
-          <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center space-x-3 sm:space-x-4 lg:space-x-6 min-w-0 flex-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-2xl flex items-center justify-center transform hover:scale-110 transition-transform duration-200 shadow-xl flex-shrink-0">
-                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-white" />
+          <div className="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center space-x-3 sm:space-x-4 lg:space-x-5 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center transform hover:scale-110 transition-transform duration-200 shadow-lg flex-shrink-0">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-white/80 text-xs sm:text-sm lg:text-lg">Total Portfolio Value</h2>
-                <p className="text-xl sm:text-3xl lg:text-5xl font-bold text-white truncate">${realTotalValue.toLocaleString()}</p>
+                <h2 className="text-white/80 text-sm sm:text-base lg:text-lg">Total Portfolio Value</h2>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white truncate">${realTotalValue.toLocaleString()}</p>
               </div>
             </div>
             
-            <div className="flex items-center justify-between lg:justify-end lg:space-x-4 xl:space-x-8 space-x-2 sm:space-x-4 flex-shrink-0">
+            <div className="flex items-center justify-between lg:justify-end lg:space-x-4 xl:space-x-6 space-x-3 sm:space-x-4 flex-shrink-0">
               <div className="text-center min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
-                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6 text-green-400" />
+                <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
+                  <TrendingUp className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-400" />
                 </div>
-                <div className="text-sm sm:text-lg lg:text-2xl font-bold text-green-400">+{portfolioData.dayChangePercent}%</div>
-                <div className="text-white/80 text-xs lg:text-sm">Today</div>
-                <div className="text-white text-xs sm:text-sm lg:text-lg font-bold">+${portfolioData.dayChange.toLocaleString()}</div>
+                <div className="text-sm sm:text-base lg:text-lg font-bold text-green-400">+{portfolioData.dayChangePercent}%</div>
+                <div className="text-white/80 text-xs sm:text-xs lg:text-sm">Today</div>
+                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">+${portfolioData.dayChange.toLocaleString()}</div>
               </div>
               
               <div className="text-center min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
-                  <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6 text-purple-400" />
+                <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
+                  <ArrowUpRight className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-purple-400" />
                 </div>
-                <div className="text-sm sm:text-lg lg:text-2xl font-bold text-purple-400">+{realTotalGainPercent}%</div>
-                <div className="text-white/80 text-xs lg:text-sm">All Time</div>
-                <div className="text-white text-xs sm:text-sm lg:text-lg font-bold">+${realTotalGain.toLocaleString()}</div>
+                <div className="text-sm sm:text-base lg:text-lg font-bold text-purple-400">+{realTotalGainPercent}%</div>
+                <div className="text-white/80 text-xs sm:text-xs lg:text-sm">All Time</div>
+                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">+${realTotalGain.toLocaleString()}</div>
               </div>
               
               <div className="text-center min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
-                  <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 lg:h-6 lg:w-6 text-cyan-400" />
+                <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
+                  <BarChart3 className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-cyan-400" />
                 </div>
-                <div className="text-sm sm:text-lg lg:text-2xl font-bold text-cyan-400">{portfolio.holdings?.length || 0}</div>
-                <div className="text-white/80 text-xs lg:text-sm">Positions</div>
-                <div className="text-white text-sm lg:text-lg font-bold">Active</div>
+                <div className="text-sm sm:text-base lg:text-lg font-bold text-cyan-400">{portfolio.holdings?.length || 0}</div>
+                <div className="text-white/80 text-xs sm:text-xs lg:text-sm">Positions</div>
+                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">Active</div>
               </div>
             </div>
           </div>
@@ -110,61 +110,62 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
           <div className="bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 rounded-2xl p-3 lg:p-4 text-white shadow-xl relative overflow-hidden flex-1 min-h-0">
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent backdrop-blur-3xl"></div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
-            <div className="relative z-10 h-full flex flex-col">
-              <h3 className="text-xl font-bold mb-4 flex items-center">
-                <Activity className="h-6 w-6 mr-3" />
+            <div className="relative z-10 h-full flex flex-col min-h-0">
+              <h3 className="text-lg lg:text-xl font-bold mb-3 flex items-center flex-shrink-0">
+                <Activity className="h-5 w-5 lg:h-6 lg:w-6 mr-2 lg:mr-3" />
                 Performance Analytics
               </h3>
               
               {/* Metrics Row - Using Real Data */}
-              <div className="grid grid-cols-3 gap-6 mb-6">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <TrendingUp className="h-6 w-6" />
+              <div className="flex justify-around gap-2 lg:gap-4 mb-3 lg:mb-4 flex-shrink-0">
+                <div className="text-center flex-1 min-w-0">
+                  <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
+                    <TrendingUp className="h-4 w-4 lg:h-5 lg:w-5" />
                   </div>
-                  <div className="text-2xl font-bold mb-1">+{realTotalGainPercent}%</div>
-                  <div className="text-sm opacity-90">Total Return</div>
+                  <div className="text-lg lg:text-xl font-bold mb-1">+{realTotalGainPercent}%</div>
+                  <div className="text-xs lg:text-sm opacity-90">Total Return</div>
                 </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <Activity className="h-6 w-6" />
+                <div className="text-center flex-1 min-w-0">
+                  <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
+                    <Activity className="h-4 w-4 lg:h-5 lg:w-5" />
                   </div>
-                  <div className="text-2xl font-bold mb-1">{portfolioData.dayChangePercent}%</div>
-                  <div className="text-sm opacity-90">Today's Return</div>
+                  <div className="text-lg lg:text-xl font-bold mb-1">{portfolioData.dayChangePercent}%</div>
+                  <div className="text-xs lg:text-sm opacity-90">Today's Return</div>
                 </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <BarChart3 className="h-6 w-6" />
+                <div className="text-center flex-1 min-w-0">
+                  <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
+                    <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5" />
                   </div>
-                  <div className="text-2xl font-bold mb-1">${(realTotalValue / (portfolio.holdings?.length || 1)).toFixed(0)}</div>
-                  <div className="text-sm opacity-90">Avg Position</div>
+                  <div className="text-lg lg:text-xl font-bold mb-1">${(realTotalValue / (portfolio.holdings?.length || 1)).toFixed(0)}</div>
+                  <div className="text-xs lg:text-sm opacity-90">Avg Position</div>
                 </div>
               </div>
 
               {/* Performance Chart - CSS Based */}
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 flex-1">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold">7-Month Trend</span>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 lg:p-4 border border-white/20 flex-1 min-h-0 flex flex-col">
+                <div className="flex items-center justify-between mb-2 lg:mb-3 flex-shrink-0">
+                  <span className="text-xs lg:text-sm font-semibold">7-Month Trend</span>
                   <span className="text-xs opacity-75">Portfolio Growth</span>
                 </div>
-                <div className="h-24 flex items-end justify-between space-x-2 mb-3">
+                <div className="flex-1 flex items-end justify-between space-x-1 lg:space-x-2 mb-2 lg:mb-3 min-h-0">
                   {performanceData.map((item, index) => (
-                    <div key={item.date} className="flex flex-col items-center space-y-1 flex-1">
+                    <div key={item.date} className="flex flex-col items-center space-y-1 flex-1 min-w-0">
                       <div 
                         className="w-full bg-white/30 rounded-t-sm transition-all duration-500 hover:bg-white/50 cursor-pointer"
                         style={{ 
                           height: `${Math.max((item.value - 95000) / 1000, 8)}px`,
-                          minHeight: '6px'
+                          minHeight: '6px',
+                          maxHeight: '60px'
                         }}
                       ></div>
-                      <span className="text-xs opacity-75">{item.date}</span>
+                      <span className="text-xs opacity-75 truncate">{item.date}</span>
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between items-center text-xs opacity-75">
-                  <span>${Math.min(...performanceData.map(d => d.value)).toLocaleString()}</span>
-                  <span className="font-semibold text-green-300">+{portfolioData.totalGainPercent}% Growth</span>
-                  <span>${Math.max(...performanceData.map(d => d.value)).toLocaleString()}</span>
+                <div className="flex justify-between items-center text-xs opacity-75 flex-shrink-0">
+                  <span className="truncate">${Math.min(...performanceData.map(d => d.value)).toLocaleString()}</span>
+                  <span className="font-semibold text-green-300 px-2 truncate">+{portfolioData.totalGainPercent}% Growth</span>
+                  <span className="truncate">${Math.max(...performanceData.map(d => d.value)).toLocaleString()}</span>
                 </div>
               </div>
             </div>
