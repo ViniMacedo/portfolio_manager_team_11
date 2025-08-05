@@ -48,13 +48,13 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
   return (
     <div className="flex flex-col gap-6 h-full">
       {/* Search Header with Enhanced Glassmorphism */}
-      <div className="glass-search-header">
+      <div className="bg-gradient-to-br from-indigo-900/80 via-purple-900/70 to-pink-800/80 rounded-3xl p-8 relative overflow-hidden backdrop-blur-xl border border-white/20 shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-400/10 backdrop-blur-3xl"></div>
         <div className="absolute top-0 left-0 w-full h-full bg-white/5 backdrop-blur-sm"></div>
         <div className="relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center space-x-4">
-              <div className="glass-search-icon-container">
+              <div className="w-20 h-20 bg-gradient-to-r from-cyan-400/90 to-blue-500/90 rounded-3xl flex items-center justify-center shadow-2xl backdrop-blur-md border border-white/30 hover:scale-105 transition-all duration-300">
                 <Search className="h-10 w-10 text-white drop-shadow-lg" />
               </div>
               <div>
@@ -63,15 +63,15 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
               </div>
             </div>
             
-            <div className="glass-search-wrapper">
-              <div className="glass-search-glow"></div>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-2xl blur-xl group-hover:blur-lg transition-all duration-300"></div>
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70 z-10" />
               <input
                 type="text"
                 placeholder="Search stocks by symbol, name, or sector..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="glass-search-input"
+                className="relative z-10 pl-12 pr-6 py-4 w-96 bg-white/10 backdrop-blur-xl border border-white/30 rounded-2xl text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-white/50 focus:bg-white/15 transition-all duration-300 font-medium shadow-xl"
               />
             </div>
           </div>
@@ -79,14 +79,14 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
       </div>
 
       {/* Stock Categories with Glassmorphism */}
-      <div className="glass-category-container">
+      <div className="grid grid-cols-4 gap-6 mb-6">
         {['Technology', 'Financial Services', 'Healthcare', 'Consumer Discretionary'].map((sector) => (
           <button
             key={sector}
             onClick={() => setSearchQuery(sector)}
-            className="glass-category-button"
+            className="relative group bg-white/20 backdrop-blur-xl rounded-2xl p-6 border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 active:scale-95 text-center hover:bg-white/25 hover:border-white/40"
           >
-            <div className="glass-overlay"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="relative z-10">
               <div className="font-bold text-gray-900 mb-2 text-lg group-hover:text-gray-800 transition-colors">{sector}</div>
               <div className="text-sm text-gray-700 font-medium">
@@ -98,8 +98,8 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
       </div>
 
       {/* Stock Grid with Enhanced Glassmorphism */}
-      <div className="glass-data-grid">
-        <div className="glass-data-grid-header">
+      <div className="flex-1 bg-white/20 backdrop-blur-2xl rounded-3xl border border-white/30 shadow-2xl overflow-hidden min-h-0 hover:shadow-3xl transition-shadow duration-300">
+        <div className="p-6 border-b border-white/20 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 backdrop-blur-xl">
           <h3 className="text-xl font-bold text-gray-900 flex items-center justify-between">
             <span className="drop-shadow-sm">Market Overview</span>
             <span className="text-sm text-purple-700 font-bold bg-purple-100/50 px-4 py-2 rounded-full backdrop-blur-sm border border-purple-200/50">
@@ -108,10 +108,10 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
           </h3>
         </div>
         
-        <div className="glass-data-grid-content" ref={scrollContainerRef}>
+        <div className="h-96 overflow-y-auto p-6" ref={scrollContainerRef}>
           {filteredStocks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-600">
-              <div className="glass-loading rounded-full p-8 mb-6">
+              <div className="bg-white/20 backdrop-blur-xl rounded-full p-8 border border-white/30 shadow-xl mb-6">
                 <Search className="h-16 w-16 opacity-60" />
               </div>
               <p className="text-xl font-bold mb-2">No stocks found</p>
@@ -124,13 +124,13 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
                   <div 
                     key={stock.symbol || stock.id} 
                     onClick={() => setSelectedStock(stock)}
-                    className="glass-stock-card"
+                    className="relative group bg-white/30 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/40 hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer hover:bg-white/40 hover:border-white/50"
                   >
-                    <div className="glass-overlay"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-4">
-                          <div className={`glass-stock-icon w-16 h-16 bg-gradient-to-r ${stock.color || 'from-blue-500 to-purple-500'}`}>
+                          <div className={`w-16 h-16 bg-gradient-to-r ${stock.color || 'from-blue-500 to-purple-500'} rounded-2xl flex items-center justify-center text-white font-bold shadow-xl group-hover:shadow-2xl transition-all duration-300 border border-white/20 backdrop-blur-sm`}>
                             {(stock.symbol || 'N/A')[0]}
                           </div>
                           <div>
@@ -148,7 +148,7 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
                         </div>
                       </div>
                       
-                      <div className="glass-stock-content space-y-3 text-sm text-gray-700 p-4">
+                      <div className="space-y-3 text-sm text-gray-700 bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
                         <div className="flex justify-between">
                           <span className="font-medium">Market Cap:</span>
                           <span className="font-bold">{formatMarketCap(stock.marketCap || 0)}</span>
@@ -171,7 +171,7 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
               {searchQuery.trim() === '' && (
                 <div className="mt-8 flex flex-col items-center space-y-6">
                   {loading && (
-                    <div className="glass-spinner">
+                    <div className="flex items-center space-x-3 text-purple-700 bg-white/20 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/30 shadow-xl">
                       <Loader2 className="h-6 w-6 animate-spin" />
                       <span className="text-base font-bold">Loading more stocks...</span>
                     </div>
@@ -180,14 +180,14 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
                   {!loading && hasMoreStocks && (
                     <button
                       onClick={loadMoreStocks}
-                      className="glass-load-more"
+                      className="bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600/90 hover:to-indigo-600/90 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95 shadow-2xl hover:shadow-3xl backdrop-blur-xl border border-white/20"
                     >
                       Load More Stocks
                     </button>
                   )}
                   
                   {!hasMoreStocks && filteredStocks.length > 0 && (
-                    <div className="glass-end-message">
+                    <div className="text-gray-600 text-base font-bold bg-white/20 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/30 shadow-xl">
                       You've reached the end! All stocks loaded.
                     </div>
                   )}
@@ -197,7 +197,7 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, filteredStocks, setSelected
               {/* Search Results Info with Glassmorphism */}
               {searchQuery.trim() !== '' && (
                 <div className="mt-6 text-center">
-                  <div className="glass-loading inline-block px-6 py-4">
+                  <div className="inline-block bg-white/20 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/30 shadow-xl">
                     {filteredStocks.length > 0 ? (
                       <span className="text-gray-700 font-bold">Found {filteredStocks.length} stocks matching "{searchQuery}"</span>
                     ) : (
