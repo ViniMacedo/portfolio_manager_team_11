@@ -1,8 +1,8 @@
 // frontend/src/components/Header.jsx
 import React from 'react';
-import { Sparkles, Search, Bell, Settings, BarChart3, Zap, Eye, TrendingUp } from 'lucide-react';
+import { Sparkles, Search, Bell, Settings, BarChart3, Zap, Eye, TrendingUp, Brain } from 'lucide-react';
 
-const Header = ({ activeTab, setActiveTab }) => {
+const Header = ({ activeTab, setActiveTab, onOpenAI }) => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Sparkles, color: 'from-cyan-400 to-blue-500' },
     { id: 'holdings', label: 'Holdings', icon: BarChart3, color: 'from-purple-400 to-indigo-500' },
@@ -44,6 +44,15 @@ const Header = ({ activeTab, setActiveTab }) => {
 
             {/* Enhanced action buttons */}
             <div className="flex items-center space-x-2 flex-shrink-0">
+              {/* AI Assistant Button */}
+              <button 
+                onClick={onOpenAI}
+                className="group relative w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/30 hover:scale-105 shadow-lg"
+              >
+                <Brain className="h-4 w-4 sm:h-4.5 sm:w-4.5 lg:h-5 lg:w-5 text-white transition-colors" />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+              </button>
+              
               <button className="group w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/30 hover:scale-105">
                 <Search className="h-4 w-4 sm:h-4.5 sm:w-4.5 lg:h-5 lg:w-5 text-white/80 group-hover:text-white transition-colors" />
               </button>

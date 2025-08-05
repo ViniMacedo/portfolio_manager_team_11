@@ -44,7 +44,7 @@ export const exportPortfolioToCSV = (portfolio, portfolioData) => {
     `Export Time,${new Date().toLocaleTimeString()}`,
     '', // Empty row for spacing
     '=== INDIVIDUAL HOLDINGS ===',
-    headers.join(',') // Headers again for holdings section
+    headers.join(',') // Headers for holdings section
   ];
 
   // Add each holding as a row

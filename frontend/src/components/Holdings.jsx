@@ -16,7 +16,11 @@ const Holdings = ({ portfolio, setSelectedStock }) => {
             </div>
             <div className="text-right">
               <div className="text-white text-2xl font-bold drop-shadow-lg">
-                ${portfolio.holdings.reduce((total, stock) => total + (stock.shares * stock.current_price), 0).toFixed(2)}
+                ${portfolio.holdings.reduce((total, stock) => {
+                  const shares = stock.shares || stock.quantity || 0;
+                  const currentPrice = stock.current_price || stock.price || 0;
+                  return total + (shares * currentPrice);
+                }, 0).toFixed(2)}
               </div>
               <p className="text-white/80 text-sm font-medium">Total Value</p>
             </div>
@@ -29,16 +33,21 @@ const Holdings = ({ portfolio, setSelectedStock }) => {
         <div className="h-full overflow-y-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {portfolio.holdings.map((stock) => {
-              const value = stock.shares * stock.current_price;
-              const change = stock.current_price - stock.avg_price;
-              const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
+              // Handle different property naming conventions
+              const shares = stock.shares || stock.quantity || 0;
+              const currentPrice = stock.current_price || stock.price || 0;
+              const avgPrice = stock.avg_price || stock.average_cost || currentPrice;
+              
+              const value = shares * currentPrice;
+              const change = currentPrice - avgPrice;
+              const changePercent = avgPrice > 0 ? ((change) / avgPrice * 100).toFixed(2) : '0.00';
               const colorClass = change >= 0 ? 'from-indigo-500 to-indigo-700' : 'from-red-500 to-red-700';
 
               // Create stock object for flyout
               const stockForFlyout = {
                 symbol: stock.symbol,
-                name: stock.product_type || 'Stock',
-                price: stock.current_price,
+                name: stock.name || stock.product_type || 'Stock',
+                price: currentPrice,
                 change: change,
                 changePercent: parseFloat(changePercent),
                 volume: 1000000, // Default volume
@@ -50,7 +59,7 @@ const Holdings = ({ portfolio, setSelectedStock }) => {
               return (
                 <div 
                   key={stock.symbol} 
-                  className="glass-holding-card cursor-pointer"
+                  className="glass-holding-card cursor-pointer p-4"
                   onClick={() => setSelectedStock(stockForFlyout)}
                 >
                   <div className="flex flex-col space-y-3">
@@ -73,8 +82,8 @@ const Holdings = ({ portfolio, setSelectedStock }) => {
                     
                     <div>
                       <div className="font-bold text-gray-900 text-sm">{stock.symbol}</div>
-                      <div className="text-gray-600 text-xs">{stock.product_type || 'Stock'}</div>
-                      <div className="text-xs text-gray-500">{stock.shares} shares @ ${stock.avg_price}</div>
+                      <div className="text-gray-600 text-xs">{stock.name || stock.product_type || 'Stock'}</div>
+                      <div className="text-xs text-gray-500">{shares} shares @ ${avgPrice.toFixed(2)}</div>
                     </div>
                   </div>
                 </div>

@@ -4,7 +4,7 @@ export default function StockTicker() {
   const [stocks, setStocks] = useState([]);
 
   useEffect(() => {
-    // Mock stock data for the ticker - no API calls needed
+    // Mock stock data for the ticker, this is just for fun, can improve later
     const mockStockData = [
       { symbol: 'AAPL', price: 189.95, changePercent: 2.35 },
       { symbol: 'GOOGL', price: 2847.12, changePercent: -1.22 },

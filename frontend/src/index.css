@@ -2,7 +2,7 @@
 @import "./styles/glassmorphism.css";
 
 .ticker {
-  background: #1e293b; /* slate-800 */
+  background: #1e293b; 
   color: white;
   overflow: hidden;
   white-space: nowrap;
