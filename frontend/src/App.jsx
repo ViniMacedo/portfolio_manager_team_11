@@ -1,38 +1,35 @@
-import React, { useState, useEffect  } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity, Eye, Star, Sparkles, Zap, ArrowUpRight, Plus, Bell, Settings, Search, Calendar, FileText, Download, Share, Target, Bookmark, X, LineChart } from 'lucide-react';
-import { fetchPortfolioById, fetchAllStocks, tradeStock, fetchUserById  } from './services/api';
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity, Eye, Star, Sparkles, Zap, ArrowUpRight, Plus, Bell, Settings, Search, Calendar, FileText, Download, Share, Target, Bookmark, X, LineChart, ShoppingCart } from 'lucide-react';
+import { fetchPortfolioById, fetchAllStocks  } from './services/api';
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [portfolio, setPortfolio] = useState({ holdings: [] });
-  const [searchQuery, setSearchQuery]       = useState('');
-  const [browsableStocks, setBrowsableStocks] = useState([]);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [filteredStocks, setFilteredStocks] = useState([]);
-  const [selectedStock, setSelectedStock]     = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
-
-  useEffect(() => {
-    fetchPortfolioById(1).then(setPortfolio);
-    fetchUserById(1).then(setUserInfo);
-  }, []);
+  const [portfolio, setPortfolio] = useState(null);
 
 
-  const handleTradeStock = async (stockSymbol, action, quantity, price) => {
-    if (!userInfo) {
-      console.error('User information is not available');
-      return;
-    }
+  // Extended stock data for browsing
+  const browsableStocks = [
+    { symbol: 'AAPL', name: 'Apple Inc', price: 185.32, change: 2.45, changePercent: 1.34, volume: 62500000, marketCap: 2850000000000, sector: 'Technology', color: 'from-blue-500 to-cyan-400' },
+    { symbol: 'GOOGL', name: 'Alphabet Inc Class A', price: 142.87, change: -1.23, changePercent: -0.85, volume: 28300000, marketCap: 1800000000000, sector: 'Technology', color: 'from-emerald-500 to-teal-400' },
+    { symbol: 'MSFT', name: 'Microsoft Corporation', price: 378.45, change: 5.67, changePercent: 1.52, volume: 31200000, marketCap: 2810000000000, sector: 'Technology', color: 'from-purple-500 to-pink-400' },
+    { symbol: 'TSLA', name: 'Tesla Inc', price: 248.90, change: -8.45, changePercent: -3.28, volume: 91800000, marketCap: 790000000000, sector: 'Consumer Discretionary', color: 'from-orange-500 to-red-400' },
+    { symbol: 'AMZN', name: 'Amazon.com Inc', price: 156.78, change: 3.21, changePercent: 2.09, volume: 45600000, marketCap: 1630000000000, sector: 'Consumer Discretionary', color: 'from-indigo-500 to-blue-400' },
+    { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 498.32, change: 12.45, changePercent: 2.56, volume: 52300000, marketCap: 1230000000000, sector: 'Technology', color: 'from-green-500 to-emerald-400' },
+    { symbol: 'META', name: 'Meta Platforms Inc', price: 312.87, change: -5.43, changePercent: -1.71, volume: 19800000, marketCap: 790000000000, sector: 'Communication Services', color: 'from-blue-500 to-indigo-400' },
+    { symbol: 'NFLX', name: 'Netflix Inc', price: 445.23, change: 8.90, changePercent: 2.04, volume: 8500000, marketCap: 195000000000, sector: 'Communication Services', color: 'from-red-500 to-pink-400' },
+    { symbol: 'JPM', name: 'JPMorgan Chase & Co', price: 167.45, change: 1.23, changePercent: 0.74, volume: 12300000, marketCap: 485000000000, sector: 'Financial Services', color: 'from-gray-600 to-blue-600' },
+    { symbol: 'JNJ', name: 'Johnson & Johnson', price: 162.34, change: -0.87, changePercent: -0.53, volume: 6800000, marketCap: 425000000000, sector: 'Healthcare', color: 'from-red-400 to-pink-500' },
+    { symbol: 'V', name: 'Visa Inc', price: 245.67, change: 2.34, changePercent: 0.96, volume: 7200000, marketCap: 520000000000, sector: 'Financial Services', color: 'from-blue-600 to-purple-600' },
+    { symbol: 'WMT', name: 'Walmart Inc', price: 158.90, change: 0.45, changePercent: 0.28, volume: 8900000, marketCap: 430000000000, sector: 'Consumer Staples', color: 'from-yellow-500 to-orange-500' },
+    { symbol: 'PG', name: 'Procter & Gamble Co', price: 152.78, change: -0.32, changePercent: -0.21, volume: 5600000, marketCap: 365000000000, sector: 'Consumer Staples', color: 'from-green-400 to-blue-500' },
+    { symbol: 'HD', name: 'Home Depot Inc', price: 334.56, change: 4.23, changePercent: 1.28, volume: 4200000, marketCap: 340000000000, sector: 'Consumer Discretionary', color: 'from-orange-500 to-red-500' },
+    { symbol: 'BAC', name: 'Bank of America Corp', price: 32.87, change: 0.23, changePercent: 0.71, volume: 45600000, marketCap: 265000000000, sector: 'Financial Services', color: 'from-red-600 to-pink-600' }
+  ];
 
-    const userBalance = userInfo.balance;
-
-    try {
-      const result = await tradeStock(stockSymbol, action, quantity, price, portfolio.id, userBalance);
-      console.log('Trade successful:', result);
-    } catch (error) {
-      console.error('Trade failed:', error);
-    }
-  }
-
-  // sample data
+  // Sample data (keeping existing data structure)
   const portfolioData = {
     totalValue: 125430.50,
     dayChange: 2845.30,
@@ -51,6 +48,14 @@ const App = () => {
     { date: 'Jul', value: 125430, change: 5.8 }
   ];
 
+  const stocks = [
+    { symbol: 'AAPL', name: 'Apple Inc', shares: 50, price: 185.32, change: 2.45, changePercent: 1.34, value: 9266, color: 'from-blue-500 to-cyan-400' },
+    { symbol: 'GOOGL', name: 'Alphabet Inc', shares: 25, price: 142.87, change: -1.23, changePercent: -0.85, value: 3571.75, color: 'from-emerald-500 to-teal-400' },
+    { symbol: 'MSFT', name: 'Microsoft Corp', shares: 75, price: 378.45, change: 5.67, changePercent: 1.52, value: 28383.75, color: 'from-purple-500 to-pink-400' },
+    { symbol: 'TSLA', name: 'Tesla Inc', shares: 30, price: 248.90, change: -8.45, changePercent: -3.28, value: 7467, color: 'from-orange-500 to-red-400' },
+    { symbol: 'AMZN', name: 'Amazon.com Inc', shares: 40, price: 156.78, change: 3.21, changePercent: 2.09, value: 6271.20, color: 'from-indigo-500 to-blue-400' }
+  ];
+
   const watchlist = [
     { symbol: 'NVDA', name: 'NVIDIA Corp', price: 498.32, change: 12.45, changePercent: 2.56, color: 'from-green-500 to-emerald-400' },
     { symbol: 'META', name: 'Meta Platforms', price: 312.87, change: -5.43, changePercent: -1.71, color: 'from-blue-500 to-indigo-400' },
@@ -64,32 +69,20 @@ const App = () => {
     { id: 'watchlist', label: 'Watchlist', icon: Eye },
     { id: 'browse', label: 'Browse Stocks', icon: Search }
   ];
-  // fetch stock
-  useEffect(() => {
-    fetchAllStocks()
-      .then(stocks => {
-        setBrowsableStocks(stocks);
-        setFilteredStocks(stocks);
-      })
-      .catch(console.error);
-  }, []);
 
-
-  // Initialize with all stocks and filter based on search
+  // FOR BROWSE TAB: Initialize with all stocks and filter based on search
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredStocks(browsableStocks);
     } else {
-      const q = searchQuery.toLowerCase();
-      setFilteredStocks(
-        browsableStocks.filter(s =>
-          s.symbol.toLowerCase().includes(q) ||
-          s.name.toLowerCase().includes(q) ||
-          s.sector.toLowerCase().includes(q)
-        )
+      const filtered = browsableStocks.filter(stock => 
+        stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        stock.sector.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      setFilteredStocks(filtered);
     }
-  }, [searchQuery, browsableStocks]);
+  }, [searchQuery]);
 
   // Generate sample chart data for selected stock
   const generateChartData = (stock) => {
@@ -433,7 +426,7 @@ const App = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-3xl"></div>
         <div className="absolute top-0 right-0 w-32 h-32 lg:w-48 lg:h-48 bg-gradient-to-bl from-cyan-400/30 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-tr from-pink-400/30 to-transparent rounded-full blur-2xl"></div>
-        
+
         <div className="relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center space-x-4 lg:space-x-6">
@@ -469,7 +462,7 @@ const App = () => {
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200">
                   <BarChart3 className="h-4 w-4 lg:h-6 lg:w-6 text-cyan-400" />
                 </div>
-                <div className="text-lg lg:text-2xl font-bold text-cyan-400">{portfolio.holdings.length}</div>
+                <div className="text-lg lg:text-2xl font-bold text-cyan-400">{stocks.length}</div>
                 <div className="text-white/80 text-xs lg:text-sm">Positions</div>
                 <div className="text-white text-sm lg:text-lg font-bold">Active</div>
               </div>
@@ -488,38 +481,32 @@ const App = () => {
                 <BarChart3 className="h-5 w-5 mr-2 text-purple-600" />
                 <span>Holdings</span>
               </div>
-              <div className="text-sm text-purple-600 font-semibold">${portfolio.holdings.reduce((sum, stock) => sum + (stock.shares * stock.current_price), 0).toLocaleString()}</div>
+              <div className="text-sm text-purple-600 font-semibold">${stocks.reduce((sum, stock) => sum + stock.value, 0).toLocaleString()}</div>
             </h3>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {portfolio.holdings.map((stock) => {
-              const value = stock.shares * stock.current_price;
-              const change = stock.current_price - stock.avg_price;
-              const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
-              const colorClass = change >= 0 ? 'bg-green-400 text-green-800' : 'bg-red-400 text-red-800';
-              return (
-                <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-3 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 bg-gradient-to-r ${colorClass} rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
-                        {stock.symbol[0]}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-gray-900 text-sm">{stock.symbol}</div>
-                        <div className="text-gray-600 text-xs">{stock.shares} @ ${stock.avg_price}</div>
-                      </div>
+            {stocks.map((stock) => (
+              <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-3 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 bg-gradient-to-r ${stock.color} rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
+                      {stock.symbol[0]}
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900 text-lg">${(value/1000).toFixed(1)}k</div>
-                      <div className={`text-xs flex items-center justify-end font-semibold ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                        <span>{changePercent >= 0 ? '+' : ''}{changePercent}%</span>
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-gray-900 text-sm">{stock.symbol}</div>
+                      <div className="text-gray-600 text-xs">{stock.shares} @ ${stock.price}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-gray-900 text-lg">${(stock.value/1000).toFixed(1)}k</div>
+                    <div className={`text-xs flex items-center justify-end font-semibold ${stock.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {stock.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                      <span>{stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%</span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -715,7 +702,7 @@ const App = () => {
             <p className="text-indigo-100 text-sm">Complete overview of your positions</p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold">{portfolio.holdings.length}</div>
+            <div className="text-2xl font-bold">{stocks.length}</div>
             <div className="text-sm opacity-90">Positions</div>
           </div>
         </div>
@@ -725,41 +712,35 @@ const App = () => {
       <div className="col-span-4 row-span-2 bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-xl flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {portfolio.holdings.map((stock) => {
-              const value = stock.shares * stock.current_price;
-              const change = stock.current_price - stock.avg_price;
-              const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
-
-              return (
-                <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-shadow duration-200`}>
-                        {stock.symbol[0]}
-                      </div>
-                      <div>
-                        <div className="font-bold text-gray-900">{stock.symbol}</div>
-                        <div className="text-gray-600 text-sm">{stock.product_type}</div>
-                        <div className="text-xs text-gray-500">{stock.shares} shares</div>
-                      </div>
+            {stocks.map((stock) => (
+              <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-12 h-12 bg-gradient-to-r ${stock.color} rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-shadow duration-200`}>
+                      {stock.symbol[0]}
                     </div>
-                    
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900 text-lg">${value.toLocaleString()}</div>
-                      <div className="text-gray-600 text-sm mb-1">${stock.avg_price}</div>
-                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 hover:scale-105 ${
-                        change >= 0 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                          : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      }`}>
-                        {change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                        {changePercent >= 0 ? '+' : ''}{changePercent}%
-                      </div>
+                    <div>
+                      <div className="font-bold text-gray-900">{stock.symbol}</div>
+                      <div className="text-gray-600 text-sm">{stock.name}</div>
+                      <div className="text-xs text-gray-500">{stock.shares} shares</div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="font-bold text-gray-900 text-lg">${stock.value.toLocaleString()}</div>
+                    <div className="text-gray-600 text-sm mb-1">${stock.price}</div>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 hover:scale-105 ${
+                      stock.change >= 0 
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                        : 'bg-red-100 text-red-800 hover:bg-red-200'
+                    }`}>
+                      {stock.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                      {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
             
             {/* Additional demo holdings for scrolling */}
             {[...Array(6)].map((_, index) => (
@@ -829,7 +810,7 @@ const App = () => {
               <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                 <PieChart className="h-8 w-8" />
               </div>
-              <div className="text-3xl font-bold">{portfolio.holdings.length}</div>
+              <div className="text-3xl font-bold">5</div>
               <div className="text-sm opacity-90">Holdings</div>
             </div>
           </div>
@@ -841,42 +822,30 @@ const App = () => {
         <h3 className="text-lg font-bold text-gray-900 mb-4">Performance Ranking</h3>
         <div className="flex-1 overflow-y-auto">
           <div className="space-y-3">
-            {portfolio.holdings
-              .sort((a, b) => {
-                const perfA = (a.current_price - a.avg_price) / a.avg_price;
-                const perfB = (b.current_price - b.avg_price) / b.avg_price;
-                return perfB - perfA;
-              })
-              .map((stock, index) => {            
-                const change = stock.current_price - stock.avg_price;
-                const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
-                const colorClass = change >= 0 ? 'bg-green-400 text-green-800' : 'bg-red-400 text-red-800';
-                return (
-                  <div key={stock.symbol} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg hover:shadow-xl transition-shadow duration-200 ${
-                        index === 0 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
-                        index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
-                        index === 2 ? 'bg-gradient-to-r from-orange-400 to-red-500' :
-                        'bg-gradient-to-r from-gray-300 to-gray-400'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className={`w-12 h-12 bg-gradient-to-r ${colorClass} rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-shadow duration-200`}>
-                        {stock.symbol[0]}
-                      </div>
-                      <div>
-                        <div className="font-bold text-gray-900">{stock.symbol}</div>
-                        <div className="text-sm text-gray-600">{stock.name}</div>
-                      </div>
-                    </div>
-                    <div className={`text-2xl font-bold transition-all duration-200 hover:scale-110 ${changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {changePercent >= 0 ? '+' : ''}{changePercent}%
-                    </div>
+            {stocks.sort((a, b) => b.changePercent - a.changePercent).map((stock, index) => (
+              <div key={stock.symbol} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg hover:shadow-xl transition-shadow duration-200 ${
+                    index === 0 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
+                    index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
+                    index === 2 ? 'bg-gradient-to-r from-orange-400 to-red-500' :
+                    'bg-gradient-to-r from-gray-300 to-gray-400'
+                  }`}>
+                    {index + 1}
                   </div>
-                );
-              }
-            )}
+                  <div className={`w-12 h-12 bg-gradient-to-r ${stock.color} rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-shadow duration-200`}>
+                    {stock.symbol[0]}
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900">{stock.symbol}</div>
+                    <div className="text-sm text-gray-600">{stock.name}</div>
+                  </div>
+                </div>
+                <div className={`text-2xl font-bold transition-all duration-200 hover:scale-110 ${stock.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
