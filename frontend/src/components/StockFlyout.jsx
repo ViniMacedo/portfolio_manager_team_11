@@ -1,7 +1,40 @@
-import React from 'react';
-import { X, TrendingUp, TrendingDown, LineChart, BarChart3, Plus, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, TrendingUp, TrendingDown, LineChart, BarChart3, Plus, Minus, Star } from 'lucide-react';
 
-const StockFlyout = ({ stock, onClose }) => {
+const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance = 0 }) => {
+  const [quantity, setQuantity] = useState(1);
+  
+  // Find current holdings for this stock
+  const currentHolding = holdings.find(h => h.symbol === stock.symbol);
+  const currentShares = currentHolding?.shares || 0;
+  
+  // Calculate total price
+  const totalPrice = (stock.price || 0) * quantity;
+  
+  const handleBuyStock = () => {
+    if (onTradeStock && quantity > 0) {
+      onTradeStock(stock.symbol, 'BUY', quantity, stock.price);
+    }
+  };
+
+  const handleSellStock = () => {
+    if (onTradeStock && quantity > 0 && quantity <= currentShares) {
+      onTradeStock(stock.symbol, 'SELL', quantity, stock.price);
+    }
+  };
+
+  const incrementQuantity = () => {
+    setQuantity(prev => prev + 1);
+  };
+
+  const decrementQuantity = () => {
+    setQuantity(prev => Math.max(1, prev - 1));
+  };
+
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value) || 1;
+    setQuantity(Math.max(1, value));
+  };
   // Generate sample chart data for selected stock
   const generateChartData = (stock) => {
     const basePrice = stock.price;
@@ -155,22 +188,89 @@ const StockFlyout = ({ stock, onClose }) => {
               </div>
             </div>
 
+            {/* Current Holdings */}
+            {currentShares > 0 && (
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <h3 className="text-lg font-bold mb-2 text-blue-900">Your Holdings</h3>
+                <div className="flex justify-between">
+                  <span className="text-blue-700">Shares Owned:</span>
+                  <span className="font-semibold text-blue-900">{currentShares}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Quantity Selector */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="text-lg font-bold mb-4">Trade Quantity</h3>
+              <div className="flex items-center justify-center space-x-4 mb-4">
+                <button
+                  onClick={decrementQuantity}
+                  className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={handleQuantityChange}
+                  min="1"
+                  className="w-20 text-center text-xl font-bold border-2 border-gray-300 rounded-lg py-2"
+                />
+                <button
+                  onClick={incrementQuantity}
+                  className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="text-center space-y-2">
+                <div className="text-lg font-bold">Total: ${totalPrice.toFixed(2)}</div>
+                <div className="text-sm text-gray-600">
+                  {quantity} × ${(stock.price || 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
+
             {/* Trading Actions */}
             <div className="space-y-3">
-              <button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg">
+              <button 
+                onClick={handleBuyStock}
+                disabled={totalPrice > userBalance}
+                className={`w-full rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg ${
+                  totalPrice > userBalance 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white'
+                }`}
+              >
                 <div className="flex items-center justify-center space-x-2">
                   <Plus className="h-5 w-5" />
-                  <span>Buy ${stock.symbol}</span>
+                  <span>Buy {quantity} {stock.symbol}</span>
                 </div>
-                <div className="text-sm opacity-90 mt-1">Market Order</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {totalPrice > userBalance ? 'Insufficient Balance' : `Total: $${totalPrice.toFixed(2)}`}
+                </div>
               </button>
 
-              <button className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg">
+              <button 
+                onClick={handleSellStock}
+                disabled={quantity > currentShares || currentShares === 0}
+                className={`w-full rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg ${
+                  quantity > currentShares || currentShares === 0
+                    ? 'bg-gray-400 cursor-not-allowed text-white' 
+                    : 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white'
+                }`}
+              >
                 <div className="flex items-center justify-center space-x-2">
                   <TrendingDown className="h-5 w-5" />
-                  <span>Sell ${stock.symbol}</span>
+                  <span>Sell {quantity} {stock.symbol}</span>
                 </div>
-                <div className="text-sm opacity-90 mt-1">Market Order</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {currentShares === 0 
+                    ? 'No shares owned' 
+                    : quantity > currentShares 
+                      ? `Max: ${currentShares} shares` 
+                      : `Receive: $${totalPrice.toFixed(2)}`}
+                </div>
               </button>
 
               <button className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg">

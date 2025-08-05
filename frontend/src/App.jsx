@@ -3,7 +3,6 @@ import { fetchPortfolioById, fetchAllStocks, tradeStock, fetchUserById } from '.
 
 // Import components
 import Header from './components/Header';
-import NavTabs from './components/NavTabs';
 import Overview from './components/Overview';
 import Holdings from './components/Holdings';
 import Performance from './components/Performance';
@@ -19,6 +18,11 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [browsableStocks, setBrowsableStocks] = useState([]);
   const [filteredStocks, setFilteredStocks] = useState([]);
+  const [allStocks, setAllStocks] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMoreStocks, setHasMoreStocks] = useState(true);
+  const STOCKS_PER_PAGE = 12;
 
   useEffect(() => {
     fetchPortfolioById(1).then(setPortfolio).catch(console.error);
@@ -26,20 +30,31 @@ const App = () => {
   }, []);
 
   // Handle trade stock
-
   const handleTradeStock = async (stockSymbol, action, quantity, price) => {
-    if (!userInfo) {
-      console.error('User information is not available');
+    if (!userInfo || !portfolio) {
+      console.error('User information or portfolio is not available');
       return;
     }
 
-    const userBalance = userInfo.balance;
-
     try {
-      const result = await tradeStock(stockSymbol, action, quantity, price, portfolio.id, userBalance);
+      const result = await tradeStock(
+        userInfo.id,
+        stockSymbol, 
+        action, 
+        quantity, 
+        price, 
+        portfolio.id
+      );
       console.log('Trade successful:', result);
+      
+      // Refresh portfolio data after successful trade
+      fetchPortfolioById(portfolio.id).then(setPortfolio).catch(console.error);
+      fetchUserById(userInfo.id).then(setUserInfo).catch(console.error);
+      
+      return result;
     } catch (error) {
       console.error('Trade failed:', error);
+      throw error;
     }
   }
 
@@ -68,43 +83,212 @@ const App = () => {
     { symbol: 'NFLX', name: 'Netflix Inc', price: 445.23, change: 8.90, changePercent: 2.04, color: 'from-red-500 to-pink-400' }
   ];
 
-  // Fetch stock data - using predefined popular stocks since no /api/stocks endpoint exists
-  useEffect(() => {
-    console.log('Setting up predefined stock list...');
-    const popularStocks = [
-      { symbol: 'AAPL', name: 'Apple Inc', price: 185.32, change: 2.45, changePercent: 1.34, marketCap: 2800000000000, volume: 45000000, sector: 'Technology', color: 'from-blue-500 to-cyan-400' },
-      { symbol: 'GOOGL', name: 'Alphabet Inc', price: 142.87, change: -1.23, changePercent: -0.85, marketCap: 1800000000000, volume: 32000000, sector: 'Technology', color: 'from-emerald-500 to-teal-400' },
-      { symbol: 'MSFT', name: 'Microsoft Corp', price: 378.45, change: 5.67, changePercent: 1.52, marketCap: 2600000000000, volume: 28000000, sector: 'Technology', color: 'from-purple-500 to-pink-400' },
-      { symbol: 'TSLA', name: 'Tesla Inc', price: 248.90, change: -8.45, changePercent: -3.28, marketCap: 800000000000, volume: 75000000, sector: 'Consumer Discretionary', color: 'from-orange-500 to-red-400' },
-      { symbol: 'AMZN', name: 'Amazon.com Inc', price: 156.78, change: 3.21, changePercent: 2.09, marketCap: 1600000000000, volume: 38000000, sector: 'Consumer Discretionary', color: 'from-indigo-500 to-blue-400' },
-      { symbol: 'NVDA', name: 'NVIDIA Corp', price: 498.32, change: 12.45, changePercent: 2.56, marketCap: 1200000000000, volume: 42000000, sector: 'Technology', color: 'from-green-500 to-emerald-400' },
-      { symbol: 'META', name: 'Meta Platforms', price: 312.87, change: -5.43, changePercent: -1.71, marketCap: 800000000000, volume: 25000000, sector: 'Technology', color: 'from-blue-500 to-indigo-400' },
-      { symbol: 'NFLX', name: 'Netflix Inc', price: 445.23, change: 8.90, changePercent: 2.04, marketCap: 200000000000, volume: 18000000, sector: 'Technology', color: 'from-red-500 to-pink-400' },
-      { symbol: 'JPM', name: 'JPMorgan Chase', price: 198.45, change: 1.68, changePercent: 0.87, marketCap: 600000000000, volume: 15000000, sector: 'Financial Services', color: 'from-slate-500 to-gray-400' },
-      { symbol: 'JNJ', name: 'Johnson & Johnson', price: 165.32, change: -0.75, changePercent: -0.45, marketCap: 450000000000, volume: 12000000, sector: 'Healthcare', color: 'from-teal-500 to-cyan-400' },
-      { symbol: 'V', name: 'Visa Inc', price: 278.90, change: 3.39, changePercent: 1.23, marketCap: 550000000000, volume: 8000000, sector: 'Financial Services', color: 'from-violet-500 to-purple-400' },
-      { symbol: 'PG', name: 'Procter & Gamble', price: 155.67, change: 0.53, changePercent: 0.34, marketCap: 370000000000, volume: 6000000, sector: 'Consumer Discretionary', color: 'from-cyan-500 to-blue-400' }
+  // Comprehensive stock database - much larger dataset
+  const createComprehensiveStockDatabase = () => {
+    const sectors = ['Technology', 'Financial Services', 'Healthcare', 'Consumer Discretionary', 'Energy', 'Materials', 'Industrials', 'Utilities', 'Real Estate', 'Consumer Staples'];
+    const colors = [
+      'from-blue-500 to-cyan-400', 'from-emerald-500 to-teal-400', 'from-purple-500 to-pink-400',
+      'from-orange-500 to-red-400', 'from-indigo-500 to-blue-400', 'from-green-500 to-emerald-400',
+      'from-red-500 to-pink-400', 'from-slate-500 to-gray-400', 'from-teal-500 to-cyan-400',
+      'from-violet-500 to-purple-400', 'from-cyan-500 to-blue-400', 'from-yellow-500 to-orange-400'
     ];
+
+    const stockData = [
+      // Top 50+ Popular Stocks
+      { symbol: 'AAPL', name: 'Apple Inc', sector: 'Technology' },
+      { symbol: 'GOOGL', name: 'Alphabet Inc', sector: 'Technology' },
+      { symbol: 'MSFT', name: 'Microsoft Corp', sector: 'Technology' },
+      { symbol: 'TSLA', name: 'Tesla Inc', sector: 'Consumer Discretionary' },
+      { symbol: 'AMZN', name: 'Amazon.com Inc', sector: 'Consumer Discretionary' },
+      { symbol: 'NVDA', name: 'NVIDIA Corp', sector: 'Technology' },
+      { symbol: 'META', name: 'Meta Platforms', sector: 'Technology' },
+      { symbol: 'NFLX', name: 'Netflix Inc', sector: 'Technology' },
+      { symbol: 'JPM', name: 'JPMorgan Chase', sector: 'Financial Services' },
+      { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare' },
+      { symbol: 'V', name: 'Visa Inc', sector: 'Financial Services' },
+      { symbol: 'PG', name: 'Procter & Gamble', sector: 'Consumer Staples' },
+      { symbol: 'UNH', name: 'UnitedHealth Group', sector: 'Healthcare' },
+      { symbol: 'HD', name: 'Home Depot', sector: 'Consumer Discretionary' },
+      { symbol: 'MA', name: 'Mastercard Inc', sector: 'Financial Services' },
+      { symbol: 'BAC', name: 'Bank of America', sector: 'Financial Services' },
+      { symbol: 'XOM', name: 'Exxon Mobil', sector: 'Energy' },
+      { symbol: 'ABBV', name: 'AbbVie Inc', sector: 'Healthcare' },
+      { symbol: 'PFE', name: 'Pfizer Inc', sector: 'Healthcare' },
+      { symbol: 'KO', name: 'Coca-Cola', sector: 'Consumer Staples' },
+      { symbol: 'AVGO', name: 'Broadcom Inc', sector: 'Technology' },
+      { symbol: 'CVX', name: 'Chevron Corp', sector: 'Energy' },
+      { symbol: 'LLY', name: 'Eli Lilly', sector: 'Healthcare' },
+      { symbol: 'TMO', name: 'Thermo Fisher', sector: 'Healthcare' },
+      { symbol: 'ACN', name: 'Accenture', sector: 'Technology' },
+      { symbol: 'COST', name: 'Costco Wholesale', sector: 'Consumer Staples' },
+      { symbol: 'ABT', name: 'Abbott Laboratories', sector: 'Healthcare' },
+      { symbol: 'ADBE', name: 'Adobe Inc', sector: 'Technology' },
+      { symbol: 'CRM', name: 'Salesforce', sector: 'Technology' },
+      { symbol: 'NKE', name: 'Nike Inc', sector: 'Consumer Discretionary' },
+      { symbol: 'TXN', name: 'Texas Instruments', sector: 'Technology' },
+      { symbol: 'DHR', name: 'Danaher Corp', sector: 'Healthcare' },
+      { symbol: 'WMT', name: 'Walmart Inc', sector: 'Consumer Staples' },
+      { symbol: 'VZ', name: 'Verizon Communications', sector: 'Technology' },
+      { symbol: 'ORCL', name: 'Oracle Corp', sector: 'Technology' },
+      { symbol: 'CSCO', name: 'Cisco Systems', sector: 'Technology' },
+      { symbol: 'PEP', name: 'PepsiCo Inc', sector: 'Consumer Staples' },
+      { symbol: 'T', name: 'AT&T Inc', sector: 'Technology' },
+      { symbol: 'MRK', name: 'Merck & Co', sector: 'Healthcare' },
+      { symbol: 'INTC', name: 'Intel Corp', sector: 'Technology' },
+      { symbol: 'WFC', name: 'Wells Fargo', sector: 'Financial Services' },
+      { symbol: 'MCD', name: 'McDonald\'s Corp', sector: 'Consumer Discretionary' },
+      { symbol: 'DIS', name: 'Walt Disney', sector: 'Consumer Discretionary' },
+      { symbol: 'BMY', name: 'Bristol Myers Squibb', sector: 'Healthcare' },
+      { symbol: 'PM', name: 'Philip Morris', sector: 'Consumer Staples' },
+      { symbol: 'NEE', name: 'NextEra Energy', sector: 'Utilities' },
+      { symbol: 'RTX', name: 'Raytheon Technologies', sector: 'Industrials' },
+      { symbol: 'UPS', name: 'United Parcel Service', sector: 'Industrials' },
+      { symbol: 'LOW', name: 'Lowe\'s Companies', sector: 'Consumer Discretionary' },
+      { symbol: 'IBM', name: 'IBM Corp', sector: 'Technology' },
+      { symbol: 'AMGN', name: 'Amgen Inc', sector: 'Healthcare' },
+      { symbol: 'HON', name: 'Honeywell International', sector: 'Industrials' },
+      { symbol: 'QCOM', name: 'Qualcomm Inc', sector: 'Technology' },
+      { symbol: 'SPGI', name: 'S&P Global', sector: 'Financial Services' },
+      { symbol: 'CAT', name: 'Caterpillar Inc', sector: 'Industrials' },
+      { symbol: 'GS', name: 'Goldman Sachs', sector: 'Financial Services' },
+      { symbol: 'AMT', name: 'American Tower', sector: 'Real Estate' },
+      { symbol: 'BLK', name: 'BlackRock Inc', sector: 'Financial Services' },
+      { symbol: 'AXP', name: 'American Express', sector: 'Financial Services' },
+      { symbol: 'ISRG', name: 'Intuitive Surgical', sector: 'Healthcare' },
+      { symbol: 'TGT', name: 'Target Corp', sector: 'Consumer Discretionary' },
+      { symbol: 'MMM', name: '3M Company', sector: 'Industrials' },
+      { symbol: 'DE', name: 'Deere & Company', sector: 'Industrials' },
+      { symbol: 'GILD', name: 'Gilead Sciences', sector: 'Healthcare' },
+      { symbol: 'AMD', name: 'Advanced Micro Devices', sector: 'Technology' },
+      { symbol: 'SBUX', name: 'Starbucks Corp', sector: 'Consumer Discretionary' },
+      { symbol: 'MDLZ', name: 'Mondelez International', sector: 'Consumer Staples' },
+      { symbol: 'INTU', name: 'Intuit Inc', sector: 'Technology' },
+      { symbol: 'NOW', name: 'ServiceNow Inc', sector: 'Technology' },
+      { symbol: 'GE', name: 'General Electric', sector: 'Industrials' },
+      { symbol: 'ADP', name: 'Automatic Data Processing', sector: 'Technology' },
+      // Additional stocks to reach 100+
+      { symbol: 'CCI', name: 'Crown Castle', sector: 'Real Estate' },
+      { symbol: 'TJX', name: 'TJX Companies', sector: 'Consumer Discretionary' },
+      { symbol: 'USB', name: 'U.S. Bancorp', sector: 'Financial Services' },
+      { symbol: 'CVS', name: 'CVS Health', sector: 'Healthcare' },
+      { symbol: 'SO', name: 'Southern Company', sector: 'Utilities' },
+      { symbol: 'MO', name: 'Altria Group', sector: 'Consumer Staples' },
+      { symbol: 'PLD', name: 'Prologis Inc', sector: 'Real Estate' },
+      { symbol: 'CI', name: 'Cigna Corp', sector: 'Healthcare' },
+      { symbol: 'DUK', name: 'Duke Energy', sector: 'Utilities' },
+      { symbol: 'ZTS', name: 'Zoetis Inc', sector: 'Healthcare' },
+      { symbol: 'CL', name: 'Colgate-Palmolive', sector: 'Consumer Staples' },
+      { symbol: 'NSC', name: 'Norfolk Southern', sector: 'Industrials' },
+      { symbol: 'AON', name: 'Aon PLC', sector: 'Financial Services' },
+      { symbol: 'TFC', name: 'Truist Financial', sector: 'Financial Services' },
+      { symbol: 'FIS', name: 'Fidelity National Info', sector: 'Technology' },
+      { symbol: 'BSX', name: 'Boston Scientific', sector: 'Healthcare' },
+      { symbol: 'EMR', name: 'Emerson Electric', sector: 'Industrials' },
+      { symbol: 'ITW', name: 'Illinois Tool Works', sector: 'Industrials' },
+      { symbol: 'SHW', name: 'Sherwin-Williams', sector: 'Materials' },
+      { symbol: 'PNC', name: 'PNC Financial Services', sector: 'Financial Services' },
+      { symbol: 'ICE', name: 'Intercontinental Exchange', sector: 'Financial Services' },
+      { symbol: 'GM', name: 'General Motors', sector: 'Consumer Discretionary' },
+      { symbol: 'F', name: 'Ford Motor', sector: 'Consumer Discretionary' },
+      { symbol: 'FDX', name: 'FedEx Corp', sector: 'Industrials' },
+      { symbol: 'ECL', name: 'Ecolab Inc', sector: 'Materials' },
+      { symbol: 'APD', name: 'Air Products', sector: 'Materials' },
+      { symbol: 'SYK', name: 'Stryker Corp', sector: 'Healthcare' },
+      { symbol: 'COF', name: 'Capital One Financial', sector: 'Financial Services' },
+      { symbol: 'FISV', name: 'Fiserv Inc', sector: 'Technology' },
+      { symbol: 'EOG', name: 'EOG Resources', sector: 'Energy' },
+      { symbol: 'EL', name: 'Estee Lauder', sector: 'Consumer Discretionary' },
+      { symbol: 'MCO', name: 'Moody\'s Corp', sector: 'Financial Services' },
+      { symbol: 'D', name: 'Dominion Energy', sector: 'Utilities' },
+      { symbol: 'CME', name: 'CME Group', sector: 'Financial Services' },
+      { symbol: 'WM', name: 'Waste Management', sector: 'Industrials' },
+      { symbol: 'NOC', name: 'Northrop Grumman', sector: 'Industrials' },
+      { symbol: 'PSA', name: 'Public Storage', sector: 'Real Estate' },
+      { symbol: 'COP', name: 'ConocoPhillips', sector: 'Energy' }
+    ];
+
+    return stockData.map((stock, index) => ({
+      ...stock,
+      price: Math.random() * 400 + 50, // Random price between $50-$450
+      change: (Math.random() - 0.5) * 20, // Random change between -$10 to +$10
+      changePercent: (Math.random() - 0.5) * 8, // Random change between -4% to +4%
+      marketCap: Math.random() * 2000000000000 + 100000000000, // Random market cap
+      volume: Math.random() * 80000000 + 5000000, // Random volume
+      color: colors[index % colors.length]
+    }));
+  };
+
+  // Fetch stock data - using comprehensive stock database
+  useEffect(() => {
+    console.log('Setting up comprehensive stock database...');
+    const allStocksData = createComprehensiveStockDatabase();
+    setAllStocks(allStocksData);
     
-    setBrowsableStocks(popularStocks);
-    setFilteredStocks(popularStocks);
+    // Load initial page
+    const initialStocks = allStocksData.slice(0, STOCKS_PER_PAGE);
+    setBrowsableStocks(initialStocks);
+    setFilteredStocks(initialStocks);
   }, []);
+
+  // Load more stocks function
+  const loadMoreStocks = async () => {
+    if (loading || !hasMoreStocks) return;
+    
+    setLoading(true);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const nextPage = currentPage + 1;
+    const startIndex = (nextPage - 1) * STOCKS_PER_PAGE;
+    const endIndex = startIndex + STOCKS_PER_PAGE;
+    const newStocks = allStocks.slice(startIndex, endIndex);
+    
+    if (newStocks.length === 0) {
+      setHasMoreStocks(false);
+    } else {
+      setBrowsableStocks(prev => [...prev, ...newStocks]);
+      setCurrentPage(nextPage);
+    }
+    
+    setLoading(false);
+  };
+
+  // Enhanced search function that searches all stocks
+  const searchAllStocks = (query) => {
+    if (query.trim() === '') {
+      setFilteredStocks(browsableStocks);
+      return;
+    }
+
+    const q = query.toLowerCase();
+    const searchResults = allStocks.filter(s =>
+      s.symbol.toLowerCase().includes(q) ||
+      s.name.toLowerCase().includes(q) ||
+      s.sector.toLowerCase().includes(q)
+    );
+
+    // If we found results not in browsableStocks, add them
+    const uniqueResults = [];
+    const browsableSymbols = new Set(browsableStocks.map(s => s.symbol));
+    
+    searchResults.forEach(stock => {
+      if (!browsableSymbols.has(stock.symbol)) {
+        uniqueResults.push(stock);
+      }
+    });
+
+    if (uniqueResults.length > 0) {
+      setBrowsableStocks(prev => [...prev, ...uniqueResults]);
+    }
+    
+    setFilteredStocks(searchResults);
+  };
 
   // Filter stocks based on search query
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredStocks(browsableStocks);
-    } else {
-      const q = searchQuery.toLowerCase();
-      setFilteredStocks(
-        browsableStocks.filter(s =>
-          s.symbol.toLowerCase().includes(q) ||
-          s.name.toLowerCase().includes(q) ||
-          s.sector.toLowerCase().includes(q)
-        )
-      );
-    }
-  }, [searchQuery, browsableStocks]);
+    searchAllStocks(searchQuery);
+  }, [searchQuery, browsableStocks, allStocks]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -121,7 +305,10 @@ const App = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           filteredStocks={filteredStocks}
-          setSelectedStock={setSelectedStock} 
+          setSelectedStock={setSelectedStock}
+          loadMoreStocks={loadMoreStocks}
+          loading={loading}
+          hasMoreStocks={hasMoreStocks}
         />;
       default:
         return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} />;
@@ -136,11 +323,8 @@ const App = () => {
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-r from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
 
-      {/* Header */}
-      <Header />
-
-      {/* Navigation Tabs */}
-      <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* Header with integrated navigation tabs */}
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Content */}
       <main className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 flex-1 overflow-hidden min-h-0">
@@ -154,6 +338,9 @@ const App = () => {
         <StockFlyout 
           stock={selectedStock} 
           onClose={() => setSelectedStock(null)} 
+          onTradeStock={handleTradeStock}
+          holdings={portfolio?.holdings || []}
+          userBalance={userInfo?.balance || 0}
         />
       )}
     </div>

@@ -6,7 +6,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
       {/* Portfolio Value - Full Width Header */}
-      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 rounded-2xl p-3 lg:p-4 relative overflow-hidden flex-shrink-0">
+      <div className="glass-gradient-header rounded-2xl p-3 lg:p-4 flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-3xl"></div>
         <div className="absolute top-0 right-0 w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-bl from-cyan-400/30 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-16 h-16 lg:w-24 lg:h-24 bg-gradient-to-tr from-pink-400/30 to-transparent rounded-full blur-2xl"></div>
@@ -58,8 +58,8 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
       {/* Main Content Grid */}
       <div className="flex-1 grid grid-cols-12 gap-3 min-h-0 overflow-hidden">
         {/* Holdings Preview - Financial Data Priority */}
-        <div className="col-span-12 md:col-span-4 lg:col-span-3 bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-xl flex flex-col min-h-0 max-h-full">
-          <div className="p-3 border-b border-gray-200/50 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-t-2xl flex-shrink-0">
+        <div className="col-span-12 md:col-span-4 lg:col-span-3 glass-container flex flex-col min-h-0 max-h-full">
+          <div className="glass-gradient-section p-3 rounded-t-2xl flex-shrink-0">
             <h3 className="text-sm lg:text-lg font-bold text-gray-900 flex items-center justify-between">
               <div className="flex items-center">
                 <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-purple-600" />
@@ -75,7 +75,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
               const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
               const colorClass = change >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600';
               return (
-                <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-2 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer">
+                <div key={stock.symbol} className="glass-holding-card">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 min-w-0 flex-1">
                       <div className={`w-7 h-7 bg-gradient-to-r ${colorClass} rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg`}>

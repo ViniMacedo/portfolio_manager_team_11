@@ -48,15 +48,18 @@ export async function fetchUserById(userId) {
   }
 }
 
-export async function tradeStock(stockSymbol, action, quantity, price, portfolioId, userBalance) {
+export async function tradeStock(userId, productSymbol, type, qty, price, portfolioId) {
   try {
     const resp = await api.post('/transaction', {
-      product_symbol: stockSymbol,
-      type: action,
-      qty: quantity,
+      user_id: userId,
+      product_symbol: productSymbol,
+      type: type,
+      qty: qty,
       price: price,
       portfolio_id: portfolioId,
-      user_balance: userBalance
+      product_type: 'STOCKS', // Based on ProductType enum in models.py
+      transaction_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+      fee: 0 // Default fee to 0
     });
     console.log('Trade executed:', resp.data);
     return resp.data;
