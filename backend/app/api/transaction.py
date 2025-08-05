@@ -8,7 +8,7 @@ from decimal import Decimal
 class TransactionResource(Resource):
     def post(self):
         data = request.get_json()
-        required_fields = ['user_id', 'portfolio_id', 'product_symbol', 'qty', 'price', 'type']
+        required_fields = ['user_id', 'portfolio_id', 'product_symbol', 'qty', 'price', 'action']
         if not all(field in data for field in required_fields):
             return {'error': 'Missing required fields'}, 400
 
@@ -18,7 +18,7 @@ class TransactionResource(Resource):
             product_symbol = data['product_symbol'].upper()
             qty = Decimal(data['qty'])
             price = Decimal(data['price'])
-            tx_type = TransactionType(data['type'])
+            tx_type = TransactionType(data['action'])
         except Exception as e:
             return {'error': f'Invalid input: {str(e)}'}, 400
 

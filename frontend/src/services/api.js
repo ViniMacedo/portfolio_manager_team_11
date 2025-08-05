@@ -17,16 +17,6 @@ export const fetchPortfolioById = async (portfolioId) => {
   }
 };
 
-export async function fetchAllStocks() {
-  try {
-    const response = await api.get('/stocks');
-    console.log('Fetched all stocks:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching all stocks:', error);
-    throw error;
-  }
-}
 
 export async function fetchStockBySymbol(stockSymbol) {
   try {
@@ -48,18 +38,15 @@ export async function fetchUserById(userId) {
   }
 }
 
-export async function tradeStock(userId, productSymbol, type, qty, price, portfolioId) {
+export async function tradeStock(userId, portfolioId, productSymbol, qty, price, action) {
   try {
     const resp = await api.post('/transaction', {
       user_id: userId,
+      portfolio_id: portfolioId,
       product_symbol: productSymbol,
-      type: type,
       qty: qty,
       price: price,
-      portfolio_id: portfolioId,
-      product_type: 'STOCKS', // Based on ProductType enum in models.py
-      transaction_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-      fee: 0 // Default fee to 0
+      action: action
     });
     console.log('Trade executed:', resp.data);
     return resp.data;

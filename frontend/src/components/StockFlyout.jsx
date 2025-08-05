@@ -3,7 +3,7 @@ import { X, TrendingUp, TrendingDown, LineChart, BarChart3, Plus, Minus, Star } 
 
 const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance = 0 }) => {
   const [quantity, setQuantity] = useState(1);
-  
+  stock.changePercent = stock.change / stock.price * 100 || 0;
   // Find current holdings for this stock
   const currentHolding = holdings.find(h => h.symbol === stock.symbol);
   const currentShares = currentHolding?.shares || 0;
@@ -167,11 +167,11 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Market Cap</span>
-                  <span className="font-semibold">{formatMarketCap(stock.marketCap)}</span>
+                  <span className="font-semibold">{stock.marketCap}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Volume</span>
-                  <span className="font-semibold">{formatVolume(stock.volume)}</span>
+                  <span className="font-semibold">{stock.volume}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Sector</span>
@@ -179,11 +179,11 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">P/E Ratio</span>
-                  <span className="font-semibold">{(15 + Math.random() * 20).toFixed(1)}</span>
+                  <span className="font-semibold">{(stock.peRatio || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">52W Range</span>
-                  <span className="font-semibold text-sm">${((stock.price || 0) * 0.7).toFixed(0)} - ${((stock.price || 0) * 1.3).toFixed(0)}</span>
+                  <span className="font-semibold text-sm">${(stock.fiftyTwoWeekLow || 0).toFixed(0)} - ${(stock.fiftyTwoWeekHigh || 0).toFixed(0)}</span>
                 </div>
               </div>
             </div>
