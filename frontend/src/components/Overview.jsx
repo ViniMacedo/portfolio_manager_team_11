@@ -1,5 +1,6 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, ArrowUpRight, Activity, Zap, Eye, Plus, FileText, Download, Share, Target, Calendar, Bookmark } from 'lucide-react';
+import { exportPortfolioToCSV, sharePortfolioLink } from '../utils/exportUtils';
 
 
 const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handleTradeStock, setActiveTab }) => {
@@ -62,10 +63,10 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
       </div>
 
       {/* Main Content Grid */}
-      <div className="flex-1 grid grid-cols-12 gap-3 min-h-0 overflow-hidden">
+      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
         {/* Holdings Preview - Financial Data Priority */}
         <div className="col-span-12 md:col-span-4 lg:col-span-3 glass-container flex flex-col min-h-0 max-h-full">
-          <div className="glass-gradient-section p-3 rounded-t-2xl flex-shrink-0">
+          <div className="glass-gradient-section p-4 rounded-t-2xl flex-shrink-0">
             <h3 className="text-sm lg:text-lg font-bold text-gray-900 flex items-center justify-between">
               <div className="flex items-center">
                 <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-purple-600" />
@@ -74,26 +75,24 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
               <div className="text-xs lg:text-sm text-purple-600 font-semibold">${realTotalValue.toLocaleString()}</div>
             </h3>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
             {portfolio.holdings?.map((stock) => {
               const value = stock.shares * stock.current_price;
               const change = stock.current_price - stock.avg_price;
               const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
               const colorClass = change >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600';
               return (
-                <div key={stock.symbol} className="glass-holding-card">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 min-w-0 flex-1">
-                      <div className={`w-7 h-7 bg-gradient-to-r ${colorClass} rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg`}>
-                        {stock.symbol[0]}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-gray-900 text-sm">{stock.symbol}</div>
-                        <div className="text-gray-600 text-xs">{stock.shares} @ ${stock.avg_price}</div>
-                      </div>
+                <div key={stock.symbol} className="glass-holding-card p-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 bg-gradient-to-r ${colorClass} rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0`}>
+                      {stock.symbol[0]}
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900 text-sm">${value.toLocaleString()}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-gray-900 text-sm mb-1 truncate">{stock.symbol}</div>
+                      <div className="text-gray-600 text-xs truncate">{stock.shares} shares @ ${stock.avg_price}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0 min-w-[80px]">
+                      <div className="font-bold text-gray-900 text-sm mb-1">${value.toLocaleString()}</div>
                       <div className={`text-xs font-semibold ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {change >= 0 ? '+' : ''}{changePercent}%
                       </div>
@@ -106,7 +105,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
         </div>
 
         {/* Enhanced Performance Section with Chart */}
-        <div className="col-span-12 md:col-span-8 lg:col-span-7 flex flex-col gap-3 min-h-0">
+        <div className="col-span-12 md:col-span-8 lg:col-span-6 flex flex-col gap-3 min-h-0">
           {/* Performance Metrics & Chart */}
           <div className="bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 rounded-2xl p-3 lg:p-4 text-white shadow-xl relative overflow-hidden flex-1 min-h-0">
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent backdrop-blur-3xl"></div>
@@ -183,12 +182,18 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <div className="text-xs font-semibold text-gray-700">Reports</div>
               </button>
               
-              <button className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-green-200 group">
+              <button 
+                onClick={() => exportPortfolioToCSV(portfolio, portfolioData)}
+                className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-green-200 group"
+              >
                 <Download className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-green-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Export</div>
               </button>
               
-              <button className="glass-button text-center">
+              <button 
+                onClick={() => sharePortfolioLink(portfolio, portfolioData)}
+                className="glass-button text-center group"
+              >
                 <Share className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Share</div>
               </button>
@@ -212,7 +217,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
         </div>
 
         {/* Enhanced Watchlist & Actions - Premium UX */}
-        <div className="col-span-12 md:col-span-4 lg:col-span-2 flex flex-col gap-3 min-h-0 max-h-full">
+        <div className="col-span-12 md:col-span-12 lg:col-span-3 flex flex-col gap-3 min-h-0 max-h-full">
           {/* Premium Watchlist - Glassmorphism Design */}
           <div className="flex-1 glass-container min-h-0 max-h-full">
             <div className="glass-panel h-full flex flex-col min-h-0">
@@ -278,7 +283,12 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                   </div>
                 </button>
                 
-                <button className="w-full bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-xl p-2 text-center transition-all duration-200 border border-white/30 hover:scale-105 active:scale-95 group">
+                <button 
+                  onClick={() => {
+                    setActiveTab('performance');
+                  }}
+                  className="w-full bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-xl p-2 text-center transition-all duration-200 border border-white/30 hover:scale-105 active:scale-95 group"
+                >
                   <div className="flex items-center justify-center space-x-2">
                     <Activity className="h-3 w-3 lg:h-4 lg:w-4 group-hover:scale-110 transition-transform duration-200" />
                     <span className="font-semibold text-xs">Analysis</span>

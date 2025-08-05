@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchPortfolioById, fetchAllStocks, tradeStock, fetchUserById } from './services/api';
-
-// Import components
+import StockTicker from './components/StockTicker';
 import Header from './components/Header';
 import Overview from './components/Overview';
 import Holdings from './components/Holdings';
@@ -23,6 +22,7 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [hasMoreStocks, setHasMoreStocks] = useState(true);
   const STOCKS_PER_PAGE = 12;
+
 
   useEffect(() => {
     fetchPortfolioById(1).then(setPortfolio).catch(console.error);
@@ -325,6 +325,7 @@ const App = () => {
 
       {/* Header with integrated navigation tabs */}
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+      <StockTicker />
 
       {/* Main Content */}
       <main className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 flex-1 overflow-hidden min-h-0">
