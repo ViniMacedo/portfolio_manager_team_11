@@ -9,7 +9,6 @@ import Watchlist from './components/Watchlist';
 import BrowseStocks from './components/BrowseStocks';
 import StockFlyout from './components/StockFlyout';
 import AIAssistant from './components/AIAssistant';
-import { all } from 'axios';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -17,14 +16,7 @@ const App = () => {
   const [portfolio, setPortfolio] = useState({ holdings: [] });
   const [userInfo, setUserInfo] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [browsableStocks, setBrowsableStocks] = useState([]);
-  const [filteredStocks, setFilteredStocks] = useState([]);
-  const [allStocks, setAllStocks] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [hasMoreStocks, setHasMoreStocks] = useState(true);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
-  const STOCKS_PER_PAGE = 12;
 
 
   useEffect(() => {
@@ -72,18 +64,10 @@ const App = () => {
       if (!selectedStock || !selectedStock.symbol) return;
       try {
         const stockData = await fetchStockBySymbol(selectedStock.symbol);
-        if (allStocks.some(s => s.symbol === stockData.symbol)) {
-          const prevStocks = allStocks.filter(s => s.symbol === stockData.symbol);
-          stockData.color = prevStocks[0].color;
-        } else {
-          stockData.color = 'from-blue-500 to-blue-600'; // Default color if not found
-        }
-        setAllStocks(prev => {
-          const otherStocks = prev.filter(s => s.symbol !== stockData.symbol);
-          return [...otherStocks, stockData];
+        setSelectedStock({
+          ...stockData,
+          color: 'from-blue-500 to-blue-600' // Default color
         });
-
-        setSelectedStock(stockData);
       } catch (error) {
         console.error(`Error on fetching ${selectedStock.symbol}:`, error);
       }
@@ -91,8 +75,6 @@ const App = () => {
 
     fetchAndUpdateStock();
   }, [selectedStock?.symbol]);
-
-
 
   // Calculate real portfolio data from actual holdings
   const calculatePortfolioData = (portfolio, userInfo) => {
@@ -155,7 +137,6 @@ const App = () => {
   // Calculate real portfolio data
   const realPortfolioData = calculatePortfolioData(portfolio, userInfo);
 
-  // Create mock holdings for AI when no real data is available
   const getEffectiveHoldings = () => {
     if (portfolio?.holdings && portfolio.holdings.length > 0) {
       // Check if we have valid price data
@@ -220,220 +201,6 @@ const App = () => {
     { symbol: 'NFLX', name: 'Netflix Inc', price: 445.23, change: 8.90, changePercent: 2.04, color: 'from-red-500 to-pink-400' }
   ];
 
-  // Comprehensive stock database - much larger dataset
-  const createComprehensiveStockDatabase = () => {
-    const sectors = ['Technology', 'Financial Services', 'Healthcare', 'Consumer Discretionary', 'Energy', 'Materials', 'Industrials', 'Utilities', 'Real Estate', 'Consumer Staples'];
-    const colors = [
-      'from-blue-500 to-cyan-400', 'from-emerald-500 to-teal-400', 'from-purple-500 to-pink-400',
-      'from-orange-500 to-red-400', 'from-indigo-500 to-blue-400', 'from-green-500 to-emerald-400',
-      'from-red-500 to-pink-400', 'from-slate-500 to-gray-400', 'from-teal-500 to-cyan-400',
-      'from-violet-500 to-purple-400', 'from-cyan-500 to-blue-400', 'from-yellow-500 to-orange-400'
-    ];
-
-    const stockData = [
-      { symbol: 'AAPL', name: 'Apple Inc', sector: 'Technology' },
-      { symbol: 'GOOGL', name: 'Alphabet Inc', sector: 'Technology' },
-      { symbol: 'MSFT', name: 'Microsoft Corp', sector: 'Technology' },
-      { symbol: 'TSLA', name: 'Tesla Inc', sector: 'Consumer Discretionary' },
-      { symbol: 'AMZN', name: 'Amazon.com Inc', sector: 'Consumer Discretionary' },
-      { symbol: 'NVDA', name: 'NVIDIA Corp', sector: 'Technology' },
-      { symbol: 'META', name: 'Meta Platforms', sector: 'Technology' },
-      { symbol: 'NFLX', name: 'Netflix Inc', sector: 'Technology' },
-      { symbol: 'JPM', name: 'JPMorgan Chase', sector: 'Financial Services' },
-      { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare' },
-      { symbol: 'V', name: 'Visa Inc', sector: 'Financial Services' },
-      { symbol: 'PG', name: 'Procter & Gamble', sector: 'Consumer Staples' },
-      { symbol: 'UNH', name: 'UnitedHealth Group', sector: 'Healthcare' },
-      { symbol: 'HD', name: 'Home Depot', sector: 'Consumer Discretionary' },
-      { symbol: 'MA', name: 'Mastercard Inc', sector: 'Financial Services' },
-      { symbol: 'BAC', name: 'Bank of America', sector: 'Financial Services' },
-      { symbol: 'XOM', name: 'Exxon Mobil', sector: 'Energy' },
-      { symbol: 'ABBV', name: 'AbbVie Inc', sector: 'Healthcare' },
-      { symbol: 'PFE', name: 'Pfizer Inc', sector: 'Healthcare' },
-      { symbol: 'KO', name: 'Coca-Cola', sector: 'Consumer Staples' },
-      { symbol: 'AVGO', name: 'Broadcom Inc', sector: 'Technology' },
-      { symbol: 'CVX', name: 'Chevron Corp', sector: 'Energy' },
-      { symbol: 'LLY', name: 'Eli Lilly', sector: 'Healthcare' },
-      { symbol: 'TMO', name: 'Thermo Fisher', sector: 'Healthcare' },
-      { symbol: 'ACN', name: 'Accenture', sector: 'Technology' },
-      { symbol: 'COST', name: 'Costco Wholesale', sector: 'Consumer Staples' },
-      { symbol: 'ABT', name: 'Abbott Laboratories', sector: 'Healthcare' },
-      { symbol: 'ADBE', name: 'Adobe Inc', sector: 'Technology' },
-      { symbol: 'CRM', name: 'Salesforce', sector: 'Technology' },
-      { symbol: 'NKE', name: 'Nike Inc', sector: 'Consumer Discretionary' },
-      { symbol: 'TXN', name: 'Texas Instruments', sector: 'Technology' },
-      { symbol: 'DHR', name: 'Danaher Corp', sector: 'Healthcare' },
-      { symbol: 'WMT', name: 'Walmart Inc', sector: 'Consumer Staples' },
-      { symbol: 'VZ', name: 'Verizon Communications', sector: 'Technology' },
-      { symbol: 'ORCL', name: 'Oracle Corp', sector: 'Technology' },
-      { symbol: 'CSCO', name: 'Cisco Systems', sector: 'Technology' },
-      { symbol: 'PEP', name: 'PepsiCo Inc', sector: 'Consumer Staples' },
-      { symbol: 'T', name: 'AT&T Inc', sector: 'Technology' },
-      { symbol: 'MRK', name: 'Merck & Co', sector: 'Healthcare' },
-      { symbol: 'INTC', name: 'Intel Corp', sector: 'Technology' },
-      { symbol: 'WFC', name: 'Wells Fargo', sector: 'Financial Services' },
-      { symbol: 'MCD', name: 'McDonald\'s Corp', sector: 'Consumer Discretionary' },
-      { symbol: 'DIS', name: 'Walt Disney', sector: 'Consumer Discretionary' },
-      { symbol: 'BMY', name: 'Bristol Myers Squibb', sector: 'Healthcare' },
-      { symbol: 'PM', name: 'Philip Morris', sector: 'Consumer Staples' },
-      { symbol: 'NEE', name: 'NextEra Energy', sector: 'Utilities' },
-      { symbol: 'RTX', name: 'Raytheon Technologies', sector: 'Industrials' },
-      { symbol: 'UPS', name: 'United Parcel Service', sector: 'Industrials' },
-      { symbol: 'LOW', name: 'Lowe\'s Companies', sector: 'Consumer Discretionary' },
-      { symbol: 'IBM', name: 'IBM Corp', sector: 'Technology' },
-      { symbol: 'AMGN', name: 'Amgen Inc', sector: 'Healthcare' },
-      { symbol: 'HON', name: 'Honeywell International', sector: 'Industrials' },
-      { symbol: 'QCOM', name: 'Qualcomm Inc', sector: 'Technology' },
-      { symbol: 'SPGI', name: 'S&P Global', sector: 'Financial Services' },
-      { symbol: 'CAT', name: 'Caterpillar Inc', sector: 'Industrials' },
-      { symbol: 'GS', name: 'Goldman Sachs', sector: 'Financial Services' },
-      { symbol: 'AMT', name: 'American Tower', sector: 'Real Estate' },
-      { symbol: 'BLK', name: 'BlackRock Inc', sector: 'Financial Services' },
-      { symbol: 'AXP', name: 'American Express', sector: 'Financial Services' },
-      { symbol: 'ISRG', name: 'Intuitive Surgical', sector: 'Healthcare' },
-      { symbol: 'TGT', name: 'Target Corp', sector: 'Consumer Discretionary' },
-      { symbol: 'MMM', name: '3M Company', sector: 'Industrials' },
-      { symbol: 'DE', name: 'Deere & Company', sector: 'Industrials' },
-      { symbol: 'GILD', name: 'Gilead Sciences', sector: 'Healthcare' },
-      { symbol: 'AMD', name: 'Advanced Micro Devices', sector: 'Technology' },
-      { symbol: 'SBUX', name: 'Starbucks Corp', sector: 'Consumer Discretionary' },
-      { symbol: 'MDLZ', name: 'Mondelez International', sector: 'Consumer Staples' },
-      { symbol: 'INTU', name: 'Intuit Inc', sector: 'Technology' },
-      { symbol: 'NOW', name: 'ServiceNow Inc', sector: 'Technology' },
-      { symbol: 'GE', name: 'General Electric', sector: 'Industrials' },
-      { symbol: 'ADP', name: 'Automatic Data Processing', sector: 'Technology' },
-      { symbol: 'CCI', name: 'Crown Castle', sector: 'Real Estate' },
-      { symbol: 'TJX', name: 'TJX Companies', sector: 'Consumer Discretionary' },
-      { symbol: 'USB', name: 'U.S. Bancorp', sector: 'Financial Services' },
-      { symbol: 'CVS', name: 'CVS Health', sector: 'Healthcare' },
-      { symbol: 'SO', name: 'Southern Company', sector: 'Utilities' },
-      { symbol: 'MO', name: 'Altria Group', sector: 'Consumer Staples' },
-      { symbol: 'PLD', name: 'Prologis Inc', sector: 'Real Estate' },
-      { symbol: 'CI', name: 'Cigna Corp', sector: 'Healthcare' },
-      { symbol: 'DUK', name: 'Duke Energy', sector: 'Utilities' },
-      { symbol: 'ZTS', name: 'Zoetis Inc', sector: 'Healthcare' },
-      { symbol: 'CL', name: 'Colgate-Palmolive', sector: 'Consumer Staples' },
-      { symbol: 'NSC', name: 'Norfolk Southern', sector: 'Industrials' },
-      { symbol: 'AON', name: 'Aon PLC', sector: 'Financial Services' },
-      { symbol: 'TFC', name: 'Truist Financial', sector: 'Financial Services' },
-      { symbol: 'FIS', name: 'Fidelity National Info', sector: 'Technology' },
-      { symbol: 'BSX', name: 'Boston Scientific', sector: 'Healthcare' },
-      { symbol: 'EMR', name: 'Emerson Electric', sector: 'Industrials' },
-      { symbol: 'ITW', name: 'Illinois Tool Works', sector: 'Industrials' },
-      { symbol: 'SHW', name: 'Sherwin-Williams', sector: 'Materials' },
-      { symbol: 'PNC', name: 'PNC Financial Services', sector: 'Financial Services' },
-      { symbol: 'ICE', name: 'Intercontinental Exchange', sector: 'Financial Services' },
-      { symbol: 'GM', name: 'General Motors', sector: 'Consumer Discretionary' },
-      { symbol: 'F', name: 'Ford Motor', sector: 'Consumer Discretionary' },
-      { symbol: 'FDX', name: 'FedEx Corp', sector: 'Industrials' },
-      { symbol: 'ECL', name: 'Ecolab Inc', sector: 'Materials' },
-      { symbol: 'APD', name: 'Air Products', sector: 'Materials' },
-      { symbol: 'SYK', name: 'Stryker Corp', sector: 'Healthcare' },
-      { symbol: 'COF', name: 'Capital One Financial', sector: 'Financial Services' },
-      { symbol: 'EOG', name: 'EOG Resources', sector: 'Energy' },
-      { symbol: 'EL', name: 'Estee Lauder', sector: 'Consumer Discretionary' },
-      { symbol: 'MCO', name: 'Moody\'s Corp', sector: 'Financial Services' },
-      { symbol: 'D', name: 'Dominion Energy', sector: 'Utilities' },
-      { symbol: 'CME', name: 'CME Group', sector: 'Financial Services' },
-      { symbol: 'WM', name: 'Waste Management', sector: 'Industrials' },
-      { symbol: 'NOC', name: 'Northrop Grumman', sector: 'Industrials' },
-      { symbol: 'PSA', name: 'Public Storage', sector: 'Real Estate' },
-      { symbol: 'COP', name: 'ConocoPhillips', sector: 'Energy' }
-    ];
-
-    const fetchDetailedStocks = async (stockData) => {
-      const detailedStocks = await Promise.all(
-        stockData.map(async (stock, index) => {
-          const detailedStock = await fetchStockBySymbol(stock.symbol);
-          return {
-            ...detailedStock,
-            color: colors[index % colors.length]
-          };
-        })
-      );
-
-      return detailedStocks;
-    };              
-
-    return fetchDetailedStocks(stockData);
-  };
-
-  // Fetch stock data - using comprehensive stock database
-  useEffect(() => {
-    console.log('Setting up comprehensive stock database...');
-    
-    const loadStockData = async () => {
-      const allStocksData = await createComprehensiveStockDatabase();
-      setAllStocks(allStocksData);
-
-      const initialStocks = allStocksData.slice(0, STOCKS_PER_PAGE);
-      setBrowsableStocks(initialStocks);
-      setFilteredStocks(initialStocks);
-    };
-
-    loadStockData();
-  }, []);
-
-  // Load more stocks function
-  const loadMoreStocks = async () => {
-    if (loading || !hasMoreStocks) return;
-    
-    setLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const nextPage = currentPage + 1;
-    const startIndex = (nextPage - 1) * STOCKS_PER_PAGE;
-    const endIndex = startIndex + STOCKS_PER_PAGE;
-    const newStocks = allStocks.slice(startIndex, endIndex);
-    
-    if (newStocks.length === 0) {
-      setHasMoreStocks(false);
-    } else {
-      setBrowsableStocks(prev => [...prev, ...newStocks]);
-      setCurrentPage(nextPage);
-    }
-    
-    setLoading(false);
-  };
-
-  // Enhanced search function that searches all stocks
-  const searchAllStocks = (query) => {
-    if (query.trim() === '') {
-      setFilteredStocks(browsableStocks);
-      return;
-    }
-
-    const q = query.toLowerCase();
-    const searchResults = allStocks.filter(s =>
-      s.symbol.toLowerCase().includes(q) ||
-      s.name.toLowerCase().includes(q) ||
-      s.sector.toLowerCase().includes(q)
-    );
-
-    // If we found results not in browsableStocks, add them
-    const uniqueResults = [];
-    const browsableSymbols = new Set(browsableStocks.map(s => s.symbol));
-    
-    searchResults.forEach(stock => {
-      if (!browsableSymbols.has(stock.symbol)) {
-        uniqueResults.push(stock);
-      }
-    });
-
-    if (uniqueResults.length > 0) {
-      setBrowsableStocks(prev => [...prev, ...uniqueResults]);
-    }
-    
-    setFilteredStocks(searchResults);
-  };
-
-  // Filter stocks based on search query
-  useEffect(() => {
-    searchAllStocks(searchQuery);
-  }, [searchQuery, browsableStocks, allStocks]);
-
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
@@ -448,11 +215,7 @@ const App = () => {
         return <BrowseStocks 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          filteredStocks={filteredStocks}
           setSelectedStock={setSelectedStock}
-          loadMoreStocks={loadMoreStocks}
-          loading={loading}
-          hasMoreStocks={hasMoreStocks}
         />;
       default:
         return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} />;

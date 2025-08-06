@@ -6,6 +6,19 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+export const searchSymbols = async (query) => {
+  try {
+    const response = await api.get(
+      `/symbol-search?q=${encodeURIComponent(query)}`
+    );
+    console.log("Symbol search results:", response.data);
+    return response.data.matches;
+  } catch (error) {
+    console.error("Error searching symbols:", error);
+    throw error;
+  }
+};
+
 export const fetchPortfolioById = async (portfolioId) => {
   try {
     const response = await api.get(`/portfolio/${portfolioId}`);
@@ -16,7 +29,6 @@ export const fetchPortfolioById = async (portfolioId) => {
     throw error;
   }
 };
-
 
 export async function fetchStockBySymbol(stockSymbol) {
   try {
@@ -33,28 +45,34 @@ export async function fetchUserById(userId) {
     const resp = await api.get(`/user/${userId}`);
     return resp.data;
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error("Error fetching user:", error);
     throw error;
   }
 }
 
-export async function tradeStock(userId, portfolioId, productSymbol, qty, price, action) {
+export async function tradeStock(
+  userId,
+  portfolioId,
+  productSymbol,
+  qty,
+  price,
+  action
+) {
   try {
-    const resp = await api.post('/transaction', {
+    const resp = await api.post("/transaction", {
       user_id: userId,
       portfolio_id: portfolioId,
       product_symbol: productSymbol,
       qty: qty,
       price: price,
-      action: action
+      action: action,
     });
-    console.log('Trade executed:', resp.data);
+    console.log("Trade executed:", resp.data);
     return resp.data;
   } catch (error) {
-    console.error('Error trading stock:', error);
+    console.error("Error trading stock:", error);
     throw error;
   }
 }
-
 
 export default api;
