@@ -9,8 +9,9 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
   const [stockDetails, setStockDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(new Set());
   const [errorDetails, setErrorDetails] = useState(new Set());
+  const [queuedDetails, setQueuedDetails] = useState(new Set());
+
   const scrollContainerRef = useRef(null);
-  const observerRef = useRef(null);
   const stockRefs = useRef({});
   const detailsQueue = useRef([]);
   const processingQueue = useRef(false);
@@ -32,7 +33,7 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
     if (processingQueue.current || detailsQueue.current.length === 0) return;
 
     processingQueue.current = true;
-    const BATCH_SIZE = 2; // Process 2 stocks at a time
+    const BATCH_SIZE = 3;
 
     while (detailsQueue.current.length > 0) {
       const batch = detailsQueue.current.splice(0, BATCH_SIZE);
@@ -102,13 +103,20 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
     }, 300)
   ).current;
 
-  // Set up the search effect
   useEffect(() => {
     debouncedSearch(searchQuery);
     return () => debouncedSearch.cancel();
   }, [searchQuery, debouncedSearch]);
 
-  // Set up intersection observers for lazy loading stock details
+  // Polling interval to keep queuedDetails in sync
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQueuedDetails(new Set(detailsQueue.current));
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const observers = {};
 
@@ -151,23 +159,17 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
 
   const formatMarketCap = (value) => {
     if (!value) return "N/A";
-    if (value >= 1000000000000) {
-      return `$${(value / 1000000000000).toFixed(2)}T`;
-    } else if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(2)}B`;
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    return `$${value.toLocaleString()}`;
+    if (value >= 1_000_000_000_000)
+      return `${(value / 1_000_000_000_000).toFixed(2)}T`;
+    if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}B`;
+    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
+    return `${value.toLocaleString()}`;
   };
 
   const formatVolume = (value) => {
     if (!value) return "N/A";
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}K`;
-    }
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
     return value.toLocaleString();
   };
 
@@ -243,7 +245,9 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {searchResults.map((result) => {
                   const details = stockDetails[result.symbol] || {};
-                  const isLoadingDetails = loadingDetails.has(result.symbol);
+                  const isQueued = queuedDetails.has(result.symbol);
+                  const isLoadingNow = loadingDetails.has(result.symbol);
+                  const isLoadingDetails = isQueued || isLoadingNow;
 
                   return (
                     <div
@@ -329,7 +333,9 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
                           {isLoadingDetails ? (
                             <div className="flex items-center justify-center py-2">
                               <span className="text-gray-500 text-sm">
-                                Loading details...
+                                {isLoadingNow
+                                  ? "Loading details..."
+                                  : "Queued for loading..."}
                               </span>
                             </div>
                           ) : errorDetails.has(result.symbol) ? (
