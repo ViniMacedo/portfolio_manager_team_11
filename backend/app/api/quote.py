@@ -22,6 +22,26 @@ def format_volume(volume):
     if math.isnan(volume):
         return None
     return f"{volume / 1_000_000:.1f}M"
+import math 
+
+def format_market_cap(market_cap):
+    if market_cap is None:
+        return None
+    trillion = 1_000_000_000_000
+    billion = 1_000_000_000
+    million = 1_000_000
+    if market_cap >= trillion:
+        return f"${market_cap / trillion:.2f}T"
+    elif market_cap >= billion:
+        return f"${market_cap / billion:.2f}B"
+    elif market_cap >= million:
+        return f"${market_cap / million:.2f}M"
+    return str(market_cap)
+
+def format_volume(volume):
+    if math.isnan(volume):
+        return None
+    return f"{volume / 1_000_000:.1f}M"
 
 class QuoteResource(Resource):
     def get(self, ticker):
@@ -36,13 +56,11 @@ class QuoteResource(Resource):
             
             if hist.empty:
                 return {"error": f"Ticker = {ticker} not found"}, 404
-            
             close_prices = hist["Close"].tolist()
             volume_data = hist["Volume"].tolist()
             price = close_prices[-1]
             open_price = hist["Open"].iloc[-1]
             volume = volume_data[-1]
-
             return {
                 "symbol": ticker.upper(),
                 "symbol": ticker,

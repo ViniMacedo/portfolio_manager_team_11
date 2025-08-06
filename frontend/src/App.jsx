@@ -353,8 +353,7 @@ const App = () => {
       );
 
       return detailedStocks;
-    };              
-
+    };                           
     return fetchDetailedStocks(stockData);
   };
 
