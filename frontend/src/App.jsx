@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchPortfolioById, fetchAllStocks, tradeStock, fetchUserById } from './services/api';
-
-// Import components
+import StockTicker from './components/StockTicker';
 import Header from './components/Header';
 import Overview from './components/Overview';
 import Holdings from './components/Holdings';
@@ -9,6 +8,7 @@ import Performance from './components/Performance';
 import Watchlist from './components/Watchlist';
 import BrowseStocks from './components/BrowseStocks';
 import StockFlyout from './components/StockFlyout';
+import AIAssistant from './components/AIAssistant';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -22,11 +22,19 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMoreStocks, setHasMoreStocks] = useState(true);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const STOCKS_PER_PAGE = 12;
 
+
   useEffect(() => {
-    fetchPortfolioById(1).then(setPortfolio).catch(console.error);
-    fetchUserById(1).then(setUserInfo).catch(console.error);
+    fetchPortfolioById(1).then(data => {
+      console.log('Portfolio data received:', data);
+      setPortfolio(data);
+    }).catch(console.error);
+    fetchUserById(1).then(data => {
+      console.log('User data received:', data);
+      setUserInfo(data);
+    }).catch(console.error);
   }, []);
 
   // Handle trade stock
@@ -58,7 +66,108 @@ const App = () => {
     }
   }
 
-  // Sample data (keeping existing data structure)
+  // Calculate real portfolio data from actual holdings
+  const calculatePortfolioData = (portfolio, userInfo) => {
+    console.log('Calculating portfolio data:', { portfolio, userInfo });
+    
+    if (!portfolio?.holdings || portfolio.holdings.length === 0) {
+      console.log('No holdings found, using fallback data');
+      // Return fallback data when no real data is available
+      return {
+        totalValue: 125430.50,
+        dayChange: 2845.30,
+        dayChangePercent: 2.32,
+        totalGain: 18745.50,
+        totalGainPercent: 17.5
+      };
+    }
+
+    let totalValue = 0;
+    let totalCost = 0;
+    let dayChange = 0;
+
+    console.log('Processing holdings:', portfolio.holdings);
+
+    portfolio.holdings.forEach((holding, index) => {
+      console.log(`Processing holding ${index}:`, holding);
+      
+      const quantity = holding.quantity || holding.shares || 0;
+      const price = holding.price || 0;
+      const averageCost = holding.average_cost || holding.cost_basis || price;
+      
+      const currentValue = quantity * price;
+      const costBasis = quantity * averageCost;
+      
+      console.log(`Holding ${holding.symbol}: quantity=${quantity}, price=${price}, currentValue=${currentValue}, costBasis=${costBasis}`);
+      
+      totalValue += currentValue;
+      totalCost += costBasis;
+      
+      // Simulate day change (in real app, you'd have previous day's price)
+      const estimatedDayChange = currentValue * (Math.random() * 0.04 - 0.02); // Random ±2%
+      dayChange += estimatedDayChange;
+    });
+
+    const totalGain = totalValue - totalCost;
+    const totalGainPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
+    const dayChangePercent = totalValue > 0 ? (dayChange / totalValue) * 100 : 0;
+
+    const result = {
+      totalValue,
+      dayChange,
+      dayChangePercent,
+      totalGain,
+      totalGainPercent
+    };
+    
+    console.log('Calculated portfolio data:', result);
+    return result;
+  };
+
+  // Calculate real portfolio data
+  const realPortfolioData = calculatePortfolioData(portfolio, userInfo);
+
+  // Create mock holdings for AI when no real data is available
+  const getEffectiveHoldings = () => {
+    if (portfolio?.holdings && portfolio.holdings.length > 0) {
+      // Check if we have valid price data
+      const hasValidPrices = portfolio.holdings.some(holding => 
+        holding.price && !isNaN(holding.price) && holding.price > 0
+      );
+      
+      if (hasValidPrices) {
+        return portfolio.holdings;
+      }
+    }
+    
+    // Return mock holdings for demonstration when no valid data
+    return [
+      { symbol: 'AAPL', name: 'Apple Inc', quantity: 50, shares: 50, price: 175.50, average_cost: 150.00 },
+      { symbol: 'GOOGL', name: 'Alphabet Inc', quantity: 25, shares: 25, price: 135.20, average_cost: 120.00 },
+      { symbol: 'MSFT', name: 'Microsoft Corp', quantity: 75, shares: 75, price: 420.10, average_cost: 380.00 },
+      { symbol: 'TSLA', name: 'Tesla Inc', quantity: 30, shares: 30, price: 185.75, average_cost: 200.00 },
+      { symbol: 'NVDA', name: 'NVIDIA Corp', quantity: 20, shares: 20, price: 498.32, average_cost: 450.00 }
+    ];
+  };
+
+  // Get effective portfolio data for AI (fallback when real data is invalid)
+  const getEffectivePortfolioData = () => {
+    // If real data has valid total value, use it
+    if (realPortfolioData.totalValue > 0) {
+      return realPortfolioData;
+    }
+    
+    // Otherwise use fallback data
+    return {
+      totalValue: 125430.50,
+      dayChange: 2845.30,
+      dayChangePercent: 2.32,
+      totalGain: 18245.75,
+      totalGainPercent: 17.01
+    };
+  };
+
+  // Sample data (keeping existing data structure for fallback)
   const portfolioData = {
     totalValue: 125430.50,
     dayChange: 2845.30,
@@ -94,7 +203,6 @@ const App = () => {
     ];
 
     const stockData = [
-      // Top 50+ Popular Stocks
       { symbol: 'AAPL', name: 'Apple Inc', sector: 'Technology' },
       { symbol: 'GOOGL', name: 'Alphabet Inc', sector: 'Technology' },
       { symbol: 'MSFT', name: 'Microsoft Corp', sector: 'Technology' },
@@ -166,7 +274,6 @@ const App = () => {
       { symbol: 'NOW', name: 'ServiceNow Inc', sector: 'Technology' },
       { symbol: 'GE', name: 'General Electric', sector: 'Industrials' },
       { symbol: 'ADP', name: 'Automatic Data Processing', sector: 'Technology' },
-      // Additional stocks to reach 100+
       { symbol: 'CCI', name: 'Crown Castle', sector: 'Real Estate' },
       { symbol: 'TJX', name: 'TJX Companies', sector: 'Consumer Discretionary' },
       { symbol: 'USB', name: 'U.S. Bancorp', sector: 'Financial Services' },
@@ -293,13 +400,13 @@ const App = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} />;
+        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} />;
       case "holdings":
-        return <Holdings portfolio={portfolio} />;
+        return <Holdings portfolio={portfolio} setSelectedStock={setSelectedStock} />;
       case "performance":
-        return <Performance portfolio={portfolio} />;
+        return <Performance portfolio={portfolio} setSelectedStock={setSelectedStock} />;
       case "watchlist":
-        return <Watchlist watchlist={watchlist} />;
+        return <Watchlist watchlist={watchlist} setSelectedStock={setSelectedStock} />;
       case "browse":
         return <BrowseStocks 
           searchQuery={searchQuery}
@@ -311,7 +418,7 @@ const App = () => {
           hasMoreStocks={hasMoreStocks}
         />;
       default:
-        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} />;
+        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} />;
     }
   };
 
@@ -324,7 +431,8 @@ const App = () => {
       </div>
 
       {/* Header with integrated navigation tabs */}
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenAI={() => setIsAIAssistantOpen(true)} />
+      <StockTicker />
 
       {/* Main Content */}
       <main className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 flex-1 overflow-hidden min-h-0">
@@ -343,6 +451,15 @@ const App = () => {
           userBalance={userInfo?.balance || 0}
         />
       )}
+
+      {/* AI Assistant Modal */}
+      <AIAssistant
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        portfolioData={getEffectivePortfolioData()}
+        performanceData={performanceData}
+        holdings={getEffectiveHoldings()}
+      />
     </div>
   );
 };
