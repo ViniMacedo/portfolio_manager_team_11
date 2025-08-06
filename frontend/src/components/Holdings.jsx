@@ -1,90 +1,94 @@
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
-const Holdings = ({ portfolio }) => {
+const Holdings = ({ portfolio, setSelectedStock }) => {
   return (
-    <div className="grid grid-cols-4 grid-rows-3 gap-4 h-full">
-      {/* Header Card */}
-      <div className="col-span-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 text-white shadow-xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold">Your Holdings</h2>
-            <p className="text-indigo-100 text-sm">Complete overview of your positions</p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold">{portfolio.holdings.length}</div>
-            <div className="text-sm opacity-90">Positions</div>
+    <div className="flex flex-col gap-6 h-full">
+      {/* Header with Browse Banner Style */}
+      <div className="glass-search-header">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-400/10 backdrop-blur-3xl"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-white/5 backdrop-blur-sm"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-white text-3xl font-bold tracking-tight drop-shadow-lg">Holdings</h2>
+              <p className="text-white/90 text-lg font-medium">{portfolio.holdings.length} positions in your portfolio</p>
+            </div>
+            <div className="text-right">
+              <div className="text-white text-2xl font-bold drop-shadow-lg">
+                ${portfolio.holdings.reduce((total, stock) => {
+                  const shares = stock.shares || stock.quantity || 0;
+                  const currentPrice = stock.current_price || stock.price || 0;
+                  return total + (shares * currentPrice);
+                }, 0).toFixed(2)}
+              </div>
+              <p className="text-white/80 text-sm font-medium">Total Value</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Holdings Grid - Scrollable */}
-      <div className="col-span-4 row-span-2 bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-xl flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Holdings Grid - Scrollable with 4 columns */}
+      <div className="glass-data-grid flex-1">
+        <div className="h-full overflow-y-auto p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {portfolio.holdings.map((stock) => {
-              const value = stock.shares * stock.current_price;
-              const change = stock.current_price - stock.avg_price;
-              const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
+              // Handle different property naming conventions
+              const shares = stock.shares || stock.quantity || 0;
+              const currentPrice = stock.current_price || stock.price || 0;
+              const avgPrice = stock.avg_price || stock.average_cost || currentPrice;
+              
+              const value = shares * currentPrice;
+              const change = currentPrice - avgPrice;
+              const changePercent = avgPrice > 0 ? ((change) / avgPrice * 100).toFixed(2) : '0.00';
               const colorClass = change >= 0 ? 'from-indigo-500 to-indigo-700' : 'from-red-500 to-red-700';
 
+              // Create stock object for flyout
+              const stockForFlyout = {
+                symbol: stock.symbol,
+                name: stock.name || stock.product_type || 'Stock',
+                price: currentPrice,
+                change: change,
+                changePercent: parseFloat(changePercent),
+                volume: 1000000, // Default volume
+                marketCap: 50000000000, // Default market cap
+                sector: 'Technology', // Default sector
+                color: colorClass
+              };
+
               return (
-                <div key={stock.symbol} className="bg-gradient-to-r from-white to-gray-50 rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-12 h-12 bg-gradient-to-r ${colorClass} rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-shadow duration-200`}>
+                <div 
+                  key={stock.symbol} 
+                  className="glass-holding-card cursor-pointer p-4"
+                  onClick={() => setSelectedStock(stockForFlyout)}
+                >
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className={`w-10 h-10 bg-gradient-to-r ${colorClass} rounded-xl flex items-center justify-center text-white font-bold shadow-lg`}>
                         {stock.symbol[0]}
                       </div>
-                      <div>
-                        <div className="font-bold text-gray-900">{stock.symbol}</div>
-                        <div className="text-gray-600 text-sm">{stock.product_type || 'Stock'}</div>
-                        <div className="text-xs text-gray-500">{stock.shares} shares</div>
+                      <div className="text-right">
+                        <div className="font-bold text-gray-900 text-sm">${value.toLocaleString()}</div>
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                          change >= 0 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                          {changePercent >= 0 ? '+' : ''}{changePercent}%
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900 text-lg">${value.toLocaleString()}</div>
-                      <div className="text-gray-600 text-sm mb-1">${stock.avg_price}</div>
-                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 hover:scale-105 ${
-                        change >= 0 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                          : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      }`}>
-                        {change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                        {changePercent >= 0 ? '+' : ''}{changePercent}%
-                      </div>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{stock.symbol}</div>
+                      <div className="text-gray-600 text-xs">{stock.name || stock.product_type || 'Stock'}</div>
+                      <div className="text-xs text-gray-500">{shares} shares @ ${avgPrice.toFixed(2)}</div>
                     </div>
                   </div>
                 </div>
               );
             })}
-            
-            {/* Additional demo holdings for scrolling */}
-            {[...Array(6)].map((_, index) => (
-              <div key={`demo-${index}`} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer opacity-60">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-gray-400 to-gray-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
-                      {String.fromCharCode(65 + index)}
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-600">STOCK{index + 1}</div>
-                      <div className="text-gray-500 text-sm">Demo Company {index + 1}</div>
-                      <div className="text-xs text-gray-400">{10 + index * 5} shares</div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="font-bold text-gray-600 text-lg">${(2000 + index * 500).toLocaleString()}</div>
-                    <div className="text-gray-500 text-sm mb-1">${100 + index * 10}</div>
-                    <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-600">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      +{(1 + index * 0.5).toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>

@@ -128,7 +128,7 @@
 
 /* Holdings Styles */
 .glass-holding-card {
-  @apply bg-white/20 backdrop-blur-xl rounded-xl p-4 shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300 hover:bg-white/25;
+  @apply bg-white/20 backdrop-blur-xl rounded-xl shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300 hover:bg-white/25;
 }
 
 /* Performance Styles */

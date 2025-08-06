@@ -3,14 +3,14 @@ import { X, TrendingUp, TrendingDown, LineChart, BarChart3, Plus, Minus, Star } 
 
 const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance = 0 }) => {
   const [quantity, setQuantity] = useState(1);
-  
+stock.changePercent = stock.change / stock.price * 100 || 0;
   // Find current holdings for this stock
   const currentHolding = holdings.find(h => h.symbol === stock.symbol);
   const currentShares = currentHolding?.shares || 0;
-  
+
   // Calculate total price
   const totalPrice = (stock.price || 0) * quantity;
-  
+
   const handleBuyStock = () => {
     if (onTradeStock && quantity > 0) {
       onTradeStock(stock.symbol, 'BUY', quantity, stock.price);
@@ -51,16 +51,6 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
     return data;
   };
 
-  const formatMarketCap = (value) => {
-    if (value >= 1000000000000) {
-      return `$${(value / 1000000000000).toFixed(2)}T`;
-    } else if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(2)}B`;
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    return `$${value.toLocaleString()}`;
-  };
 
   const formatVolume = (value) => {
     if (value >= 1000000) {
@@ -76,21 +66,29 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
   const minPrice = Math.min(...chartData.map(d => d.price));
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="glass-container max-w-5xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className={`bg-gradient-to-r ${stock.color} p-6 text-white relative`}>
+        <div className={`bg-gradient-to-r ${stock.color} p-6 text-white relative rounded-t-3xl`}>
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-lg flex items-center justify-center transition-all duration-200"
+            className="absolute top-4 right-4 w-10 h-10 glass-button text-white hover:bg-white/30 rounded-xl flex items-center justify-center transition-all duration-200 z-10"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pr-16">
             <div>
               <h2 className="text-3xl font-bold">{stock.symbol}</h2>
               <p className="text-lg opacity-90">{stock.name}</p>
               <p className="text-sm opacity-75">{stock.sector || 'Unknown'}</p>
+              {/* Holdings info in header - browse banner style */}
+              {currentShares > 0 && (
+                <div className="mt-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-2xl rounded-2xl px-4 py-2 shadow-lg border border-white/30 inline-block">
+                  <div className="text-sm font-medium">
+                    You own {currentShares} shares • Value: ${(currentShares * (stock.price || 0)).toFixed(2)}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="text-right">
               <div className="text-4xl font-bold">${(stock.price || 0).toFixed(2)}</div>
@@ -102,12 +100,12 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
           </div>
         </div>
 
-        <div className="p-6 grid grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto">
-          {/* Chart Section */}
-          <div className="col-span-2 space-y-6">
+        <div className="p-6 grid grid-cols-4 gap-6 max-h-[70vh] overflow-y-auto">
+          {/* Left Column - Charts */}
+          <div className="col-span-2 space-y-6 flex flex-col h-full">
             {/* Price Chart */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="text-lg font-bold mb-4 flex items-center">
+            <div className="glass-chart-container flex-1">
+              <h3 className="text-lg font-bold mb-4 flex items-center text-slate-800">
                 <LineChart className="h-5 w-5 mr-2 text-blue-600" />
                 30-Day Price Trend
               </h3>
@@ -136,18 +134,18 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
             </div>
 
             {/* Volume Chart */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="text-lg font-bold mb-4 flex items-center">
+            <div className="glass-chart-container flex-1">
+              <h3 className="text-lg font-bold mb-4 flex items-center text-slate-800">
                 <BarChart3 className="h-5 w-5 mr-2 text-green-600" />
                 Volume Trend
               </h3>
-              <div className="h-24 flex items-end justify-between space-x-1">
+              <div className="h-32 flex items-end justify-between space-x-1">
                 {chartData.slice(-14).map((item, index) => (
                   <div key={index} className="flex flex-col items-center space-y-1 flex-1">
                     <div 
                       className="w-full bg-green-500 rounded-t-sm transition-all duration-300 hover:bg-green-600 cursor-pointer"
                       style={{ 
-                        height: `${Math.max((item.volume / 100000000) * 80, 4)}px`,
+                        height: `${Math.max((item.volume / 100000000) * 100, 4)}px`,
                         minHeight: '4px'
                       }}
                       title={`Volume: ${formatVolume(item.volume)}`}
@@ -159,53 +157,82 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
             </div>
           </div>
 
-          {/* Stock Details and Actions */}
-          <div className="space-y-6">
+          {/* Middle Column - Key Metrics & Holdings */}
+          <div className="space-y-6 flex flex-col h-full">
             {/* Key Metrics */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="text-lg font-bold mb-4">Key Metrics</h3>
-              <div className="space-y-3">
+            <div className="glass-panel p-6 flex-1">
+              <h3 className="text-lg font-bold mb-6 text-slate-800">Key Metrics</h3>
+              <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Market Cap</span>
-                  <span className="font-semibold">{formatMarketCap(stock.marketCap)}</span>
+                  <span className="text-slate-600">Market Cap</span>
+                  <span className="font-semibold text-slate-800">{stock.marketCap}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Volume</span>
-                  <span className="font-semibold">{formatVolume(stock.volume)}</span>
+                  <span className="text-slate-600">Volume</span>
+                  <span className="font-semibold text-slate-800">{stock.volume}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sector</span>
-                  <span className="font-semibold text-sm">{stock.sector}</span>
+                  <span className="text-slate-600">Sector</span>
+                  <span className="font-semibold text-sm text-slate-800">{stock.sector}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">P/E Ratio</span>
-                  <span className="font-semibold">{(15 + Math.random() * 20).toFixed(1)}</span>
+                  <span className="text-slate-600">P/E Ratio</span>
+                  <span className="font-semibold text-slate-800">{stock.peRatio}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">52W Range</span>
-                  <span className="font-semibold text-sm">${((stock.price || 0) * 0.7).toFixed(0)} - ${((stock.price || 0) * 1.3).toFixed(0)}</span>
+                  <span className="text-slate-600">52W Range</span>
+                  <span className="font-semibold text-sm text-slate-800">${(stock.fiftyTwoWeekLow || 0).toFixed(0)} - ${(stock.fiftyTwoWeekHigh || 0).toFixed(0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Avg Volume</span>
+                  <span className="font-semibold text-slate-800">{stock.volume}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Dividend</span>
+                  <span className="font-semibold text-slate-800">{(stock.dividend || 0).toFixed(2)}%</span>
                 </div>
               </div>
             </div>
 
-            {/* Current Holdings */}
-            {currentShares > 0 && (
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                <h3 className="text-lg font-bold mb-2 text-blue-900">Your Holdings</h3>
-                <div className="flex justify-between">
-                  <span className="text-blue-700">Shares Owned:</span>
-                  <span className="font-semibold text-blue-900">{currentShares}</span>
+            {/* Quick Stats */}
+            <div className="glass-panel bg-gradient-to-br from-purple-50/90 to-indigo-50/90 border-purple-200/50 p-6">
+              <h4 className="font-bold text-purple-900 mb-4">Quick Analysis</h4>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${stock.changePercent >= 2 ? 'bg-green-500' : stock.changePercent >= 0 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                  <span className="text-slate-700">
+                    {stock.changePercent >= 2 ? 'Strong Bullish' : stock.changePercent >= 0 ? 'Bullish' : 'Bearish'} Momentum
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${stock.volume > 30000000 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                  <span className="text-slate-700">
+                    {stock.volume > 30000000 ? 'High' : 'Moderate'} Volume
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-slate-700">Large Cap Stock</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                  <span className="text-slate-700">
+                    {(stock.changePercent || 0) >= 0 ? 'Recommended Buy' : 'Hold Position'}
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
 
+          {/* Right Column - Trading Actions */}
+          <div className="space-y-6 flex flex-col h-full">
             {/* Quantity Selector */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="text-lg font-bold mb-4">Trade Quantity</h3>
-              <div className="flex items-center justify-center space-x-4 mb-4">
+            <div className="glass-panel p-6 flex-1">
+              <h3 className="text-lg font-bold mb-6 text-slate-800">Trade Quantity</h3>
+              <div className="flex items-center justify-center space-x-4 mb-6">
                 <button
                   onClick={decrementQuantity}
-                  className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors"
+                  className="w-10 h-10 glass-button text-slate-700 hover:text-slate-900 rounded-full flex items-center justify-center transition-colors"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -214,32 +241,54 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                   value={quantity}
                   onChange={handleQuantityChange}
                   min="1"
-                  className="w-20 text-center text-xl font-bold border-2 border-gray-300 rounded-lg py-2"
+                  className="w-20 text-center text-xl font-bold glass-input text-slate-800 placeholder-slate-500 bg-white/50 border-slate-300"
                 />
                 <button
                   onClick={incrementQuantity}
-                  className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors"
+                  className="w-10 h-10 glass-button text-slate-700 hover:text-slate-900 rounded-full flex items-center justify-center transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
-              <div className="text-center space-y-2">
-                <div className="text-lg font-bold">Total: ${totalPrice.toFixed(2)}</div>
-                <div className="text-sm text-gray-600">
+              <div className="text-center space-y-2 mb-6">
+                <div className="text-lg font-bold text-slate-800">Total: ${totalPrice.toFixed(2)}</div>
+                <div className="text-sm text-slate-600">
                   {quantity} × ${(stock.price || 0).toFixed(2)}
                 </div>
+              </div>
+              
+              {/* Quick quantity buttons */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <button 
+                  onClick={() => setQuantity(10)}
+                  className="glass-button text-xs py-2 text-slate-700 hover:text-slate-900"
+                >
+                  10
+                </button>
+                <button 
+                  onClick={() => setQuantity(50)}
+                  className="glass-button text-xs py-2 text-slate-700 hover:text-slate-900"
+                >
+                  50
+                </button>
+                <button 
+                  onClick={() => setQuantity(100)}
+                  className="glass-button text-xs py-2 text-slate-700 hover:text-slate-900"
+                >
+                  100
+                </button>
               </div>
             </div>
 
             {/* Trading Actions */}
-            <div className="space-y-3">
+            <div className="space-y-3 flex-1 flex flex-col justify-end">
               <button 
                 onClick={handleBuyStock}
                 disabled={totalPrice > userBalance}
-                className={`w-full rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg ${
+                className={`w-full glass-button-primary ${
                   totalPrice > userBalance 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white'
+                    ? 'opacity-50 cursor-not-allowed bg-slate-400/80 hover:bg-slate-400/80 hover:scale-100' 
+                    : 'bg-gradient-to-r from-green-500/90 to-emerald-600/90 hover:from-green-600 hover:to-emerald-700'
                 }`}
               >
                 <div className="flex items-center justify-center space-x-2">
@@ -254,10 +303,10 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
               <button 
                 onClick={handleSellStock}
                 disabled={quantity > currentShares || currentShares === 0}
-                className={`w-full rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg ${
+                className={`w-full glass-button-primary ${
                   quantity > currentShares || currentShares === 0
-                    ? 'bg-gray-400 cursor-not-allowed text-white' 
-                    : 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white'
+                    ? 'opacity-50 cursor-not-allowed bg-slate-400/80 hover:bg-slate-400/80 hover:scale-100' 
+                    : 'bg-gradient-to-r from-red-500/90 to-pink-600/90 hover:from-red-600 hover:to-pink-700'
                 }`}
               >
                 <div className="flex items-center justify-center space-x-2">
@@ -273,35 +322,12 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                 </div>
               </button>
 
-              <button className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl p-4 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg">
+              <button className="w-full glass-button-primary bg-gradient-to-r from-blue-500/90 to-indigo-600/90 hover:from-blue-600 hover:to-indigo-700">
                 <div className="flex items-center justify-center space-x-2">
                   <Star className="h-5 w-5" />
                   <span>Add to Watchlist</span>
                 </div>
               </button>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
-              <h4 className="font-bold text-purple-900 mb-3">Quick Analysis</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${stock.changePercent >= 2 ? 'bg-green-500' : stock.changePercent >= 0 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
-                  <span className="text-gray-700">
-                    {stock.changePercent >= 2 ? 'Strong Bullish' : stock.changePercent >= 0 ? 'Bullish' : 'Bearish'} Momentum
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${stock.volume > 30000000 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                  <span className="text-gray-700">
-                    {stock.volume > 30000000 ? 'High' : 'Moderate'} Volume
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-gray-700">Large Cap Stock</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

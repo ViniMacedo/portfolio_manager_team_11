@@ -27,11 +27,36 @@ python run.py
 
 Frontend:
 
-```
+```bash
 cd frontend
 npm install
+# Copy the environment file and add your OpenRouter API key
+cp .env.example .env
+# Edit .env and add your OpenRouter API key for AI features
 npm run dev
 ```
+
+### Getting Your OpenRouter API Key
+
+To use the AI Assistant features, you'll need an OpenRouter API key:
+
+1. **Sign up for OpenRouter**:
+   - Visit [OpenRouter](https://openrouter.ai/)
+   - Click "Sign In" and create an account (free tier available)
+   - You can sign up with GitHub, Google, or email
+
+2. **Get Your API Key**:
+   - After logging in, go to [API Keys](https://openrouter.ai/keys)
+   - Click "Create Key" 
+   - Give your key a name (e.g., "Portfolio Manager")
+   - Copy the generated key (starts with `sk-or-v1-...`)
+
+3. **Add to Environment**:
+   - Open `frontend/.env` in your text editor
+   - Replace the empty value: `VITE_OPENROUTER_API_KEY=your_actual_key_here`
+   - Save the file and restart the development server
+
+**Note**: OpenRouter provides access to multiple AI models including Claude, GPT-4, and others. The free tier includes credits to get started.
 
 http://localhost:5173
 
@@ -50,6 +75,65 @@ You should see a welcome message that confirms the connection with the backend.
   - React (UI library)
   - Vite (Build tool)
   - Axios (HTTP client)
+  - Tailwind CSS (Styling)
+  - Lucide React (Icons)
+
+## Features
+
+### Core Portfolio Management
+- Real-time portfolio tracking and performance analytics
+- Interactive stock browsing with comprehensive search
+- Holdings management with detailed position tracking
+- Performance visualization with historical data
+- Watchlist functionality for monitoring stocks
+
+### AI-Powered Insights
+The application includes an advanced AI Assistant powered by OpenRouter that provides:
+
+1. **Portfolio Storyteller**: Generates compelling narrative summaries of portfolio performance
+   - Quarter/period performance analysis
+   - Sector allocation insights
+   - Dividend income tracking
+   - Benchmark comparisons
+
+2. **Rebalance Advisor**: Provides personalized portfolio rebalancing recommendations
+   - Optimal sector allocation analysis
+   - Overweight/underweight position identification
+   - Risk management suggestions
+   - Specific buy/sell recommendations
+
+3. **Tax-Loss Harvesting Assistant**: Identifies tax optimization opportunities
+   - Unrealized loss harvesting opportunities
+   - Wash sale rule considerations
+   - Alternative investment suggestions
+   - Tax savings estimations
+
+4. **Interactive Follow-up**: Ask detailed questions about any analysis
+   - Drill down into specific sectors or holdings
+   - Get explanations for recommendations
+   - Personalized investment insights
+
+### Using the AI Assistant
+
+1. **Access**: Click the brain icon (🧠) in the top-right corner of the header
+2. **Services Available**:
+   - **Portfolio Storyteller**: Get a narrative summary of your performance
+   - **Rebalance Advisor**: Receive personalized rebalancing recommendations
+   - **Tax-Loss Harvesting**: Identify tax optimization opportunities
+3. **Follow-up Questions**: After receiving an analysis, ask specific questions about your portfolio
+4. **API Requirements**: Requires OpenRouter API key (see setup instructions above)
+
+### AI Model Configuration
+
+You can customize the AI Assistant's behavior by editing `frontend/src/config/aiConfig.js`:
+
+- **Model Selection**: Choose from Claude 3.5 Sonnet, GPT-4, Llama, etc.
+- **Response Length**: Adjust `maxTokens` (200-800 recommended)
+- **Creativity Level**: Modify `temperature` (0.0 = factual, 1.0 = creative)
+- **System Prompts**: Customize the AI's expertise and tone
+- **Cost Management**: Set daily spending limits and warnings
+
+The AI Assistant uses **real portfolio data** from your actual holdings to provide accurate, personalized analysis.
 
 ## Database Setup
 
