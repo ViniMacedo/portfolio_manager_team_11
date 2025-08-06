@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
+
 from .config import Config
 
 # Initialize SQLAlchemy
@@ -22,10 +23,12 @@ def create_app():
     from .api.portfolio import PortfolioResource
     from .api.transaction import TransactionResource
     from .api.user import UserResource
+    from .api.symbol_search import SymbolSearchResource
     api.add_resource(QuoteResource, '/api/quote/<string:ticker>')
     api.add_resource(PortfolioResource, '/api/portfolio/<int:portfolio_id>')
     api.add_resource(TransactionResource, '/api/transaction')
     api.add_resource(UserResource, '/api/user/<int:user_id>')
+    api.add_resource(SymbolSearchResource, '/api/symbol-search')
 
     # Create database tables
     with app.app_context():
