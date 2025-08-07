@@ -43,24 +43,11 @@ const Holdings = ({ portfolio, setSelectedStock }) => {
               const changePercent = avgPrice > 0 ? ((change) / avgPrice * 100).toFixed(2) : '0.00';
               const colorClass = change >= 0 ? 'from-indigo-500 to-indigo-700' : 'from-red-500 to-red-700';
 
-              // Create stock object for flyout
-              const stockForFlyout = {
-                symbol: stock.symbol,
-                name: stock.name || stock.product_type || 'Stock',
-                price: currentPrice,
-                change: change,
-                changePercent: parseFloat(changePercent),
-                volume: 1000000, // Default volume
-                marketCap: 50000000000, // Default market cap
-                sector: 'Technology', // Default sector
-                color: colorClass
-              };
-
               return (
                 <div 
                   key={stock.symbol} 
                   className="glass-holding-card cursor-pointer p-4"
-                  onClick={() => setSelectedStock(stockForFlyout)}
+                  onClick={() => setSelectedStock(stock)}
                 >
                   <div className="flex flex-col space-y-3">
                     <div className="flex items-center justify-between">
