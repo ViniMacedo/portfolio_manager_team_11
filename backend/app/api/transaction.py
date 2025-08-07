@@ -109,7 +109,6 @@ class TransactionResource(Resource):
             new_total_qty = holding.qty + qty
             holding.avg_price = ((holding.avg_price * holding.qty) + (price * qty)) / new_total_qty
             holding.qty = new_total_qty
-            holding.current_price = price
             holding.last_updated = datetime.now(timezone.utc)
         else:
             holding = Holding(
@@ -117,7 +116,6 @@ class TransactionResource(Resource):
                 product_symbol=symbol,
                 qty=qty,
                 avg_price=price,
-                current_price=price,
                 product_type=product_type,
                 last_updated=datetime.now(timezone.utc)
             )
@@ -133,7 +131,6 @@ class TransactionResource(Resource):
 
         total_gain = qty * price - fee
         holding.qty -= qty
-        holding.current_price = price
         holding.last_updated = datetime.now(timezone.utc)
 
         if holding.qty == 0:
