@@ -126,24 +126,12 @@ const Performance = ({ portfolio, setSelectedStock }) => {
                     const changePercent = avgPrice > 0 ? ((change) / avgPrice * 100).toFixed(2) : '0.00';
                     const colorClass = change >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600';
                     
-                    // Create stock object for flyout
-                    const stockForFlyout = {
-                      symbol: stock.symbol,
-                      name: stock.name || 'Stock',
-                      price: currentPrice,
-                      change: change,
-                      changePercent: parseFloat(changePercent),
-                      volume: 1000000, // Default volume
-                      marketCap: 50000000000, // Default market cap
-                      sector: 'Technology', // Default sector
-                      color: colorClass
-                    };
                     
                     return (
                       <div 
                         key={stock.symbol} 
                         className="flex items-center justify-between p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-200 cursor-pointer"
-                        onClick={() => setSelectedStock(stockForFlyout)}
+                        onClick={() => setSelectedStock(stock)}
                       >
                         <div className="flex items-center space-x-3">
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs ${

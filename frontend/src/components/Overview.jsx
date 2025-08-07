@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, DollarSign, BarChart3, ArrowUpRight, Activity
 import { exportPortfolioToCSV, sharePortfolioLink } from '../utils/exportUtils';
 
 
-const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handleTradeStock, setActiveTab }) => {
+const Overview = ({ portfolioData, portfolio, watchlist, performanceData, setSelectedStock, setActiveTab }) => {
   // Calculate real portfolio value from holdings
   const realTotalValue = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.current_price), 0) || 0;
   const realTotalInvested = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.avg_price), 0) || 0;
@@ -35,18 +35,18 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
                   <TrendingUp className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-400" />
                 </div>
-                <div className="text-sm sm:text-base lg:text-lg font-bold text-green-400">+{portfolioData.dayChangePercent}%</div>
+                <div className="text-sm sm:text-base lg:text-lg font-bold text-green-400">{portfolioData.dayChangePercent}%</div>
                 <div className="text-white/80 text-xs sm:text-xs lg:text-sm">Today</div>
-                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">+${portfolioData.dayChange.toLocaleString()}</div>
+                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">${portfolioData.dayChange.toLocaleString()}</div>
               </div>
               
               <div className="text-center min-w-0">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
                   <ArrowUpRight className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-purple-400" />
                 </div>
-                <div className="text-sm sm:text-base lg:text-lg font-bold text-purple-400">+{realTotalGainPercent}%</div>
+                <div className="text-sm sm:text-base lg:text-lg font-bold text-purple-400">{realTotalGainPercent}%</div>
                 <div className="text-white/80 text-xs sm:text-xs lg:text-sm">All Time</div>
-                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">+${realTotalGain.toLocaleString()}</div>
+                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">{realTotalGain > 0 ? ("$" + realTotalGain.toLocaleString()) : ("-$" + (realTotalGain * -1).toLocaleString())}</div>
               </div>
               
               <div className="text-center min-w-0">
@@ -81,8 +81,13 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
               const change = stock.current_price - stock.avg_price;
               const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
               const colorClass = change >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600';
+              
               return (
-                <div key={stock.symbol} className="glass-holding-card p-3">
+                <div 
+                  key={stock.symbol} 
+                  className="glass-holding-card p-3"
+                  onClick={() => setSelectedStock(stock)}
+                >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 bg-gradient-to-r ${colorClass} rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0`}>
                       {stock.symbol[0]}
@@ -122,7 +127,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                   <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                     <TrendingUp className="h-4 w-4 lg:h-5 lg:w-5" />
                   </div>
-                  <div className="text-lg lg:text-xl font-bold mb-1">+{realTotalGainPercent}%</div>
+                  <div className="text-lg lg:text-xl font-bold mb-1">{realTotalGainPercent}%</div>
                   <div className="text-xs lg:text-sm opacity-90">Total Return</div>
                 </div>
                 <div className="text-center flex-1 min-w-0">
@@ -164,7 +169,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 </div>
                 <div className="flex justify-between items-center text-xs opacity-75 flex-shrink-0">
                   <span className="truncate">${Math.min(...performanceData.map(d => d.value)).toLocaleString()}</span>
-                  <span className="font-semibold text-green-300 px-2 truncate">+{portfolioData.totalGainPercent}% Growth</span>
+                  <span className="font-semibold text-green-300 px-2 truncate">{portfolioData.totalGainPercent}% Growth</span>
                   <span className="truncate">${Math.max(...performanceData.map(d => d.value)).toLocaleString()}</span>
                 </div>
               </div>

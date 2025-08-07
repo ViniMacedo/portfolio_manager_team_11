@@ -288,7 +288,7 @@ const App = () => {
             portfolio={portfolio}
             watchlist={watchlist}
             performanceData={performanceData}
-            handleTradeStock={handleTradeStock}
+            setSelectedStock={setSelectedStock}
             setActiveTab={setActiveTab}
           />
         );
