@@ -75,7 +75,7 @@ const Performance = ({ portfolio, setSelectedStock }) => {
               </div>
               <div className="text-sm text-white/70">Total Return</div>
             </div>
-            
+
             <div className="glass-performance-metric text-center">
               <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30">
                 <BarChart3 className="h-6 w-6 text-white" />
@@ -85,7 +85,7 @@ const Performance = ({ portfolio, setSelectedStock }) => {
               </div>
               <div className="text-sm text-white/70">YTD Return</div>
             </div>
-            
+
             <div className="glass-performance-metric text-center">
               <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30">
                 <Activity className="h-6 w-6 text-white" />
@@ -93,7 +93,7 @@ const Performance = ({ portfolio, setSelectedStock }) => {
               <div className="text-2xl font-bold text-white mb-1">{volatility.toFixed(1)}%</div>
               <div className="text-sm text-white/70">Volatility</div>
             </div>
-            
+
             <div className="glass-performance-metric text-center">
               <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30">
                 <PieChart className="h-6 w-6 text-white" />
@@ -114,7 +114,7 @@ const Performance = ({ portfolio, setSelectedStock }) => {
                     const avgPriceA = a.avg_price || a.average_cost || currentPriceA;
                     const currentPriceB = b.current_price || b.price || 0;
                     const avgPriceB = b.avg_price || b.average_cost || currentPriceB;
-                    
+
                     const perfA = avgPriceA > 0 ? (currentPriceA - avgPriceA) / avgPriceA : 0;
                     const perfB = avgPriceB > 0 ? (currentPriceB - avgPriceB) / avgPriceB : 0;
                     return perfB - perfA;

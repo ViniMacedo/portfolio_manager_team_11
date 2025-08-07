@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchPortfolioById, fetchAllStocks, tradeStock, fetchUserById } from './services/api';
+import { fetchPortfolioById, tradeStock, fetchUserById, fetchStockBySymbol } from './services/api';
 import StockTicker from './components/StockTicker';
 import Header from './components/Header';
 import Overview from './components/Overview';
@@ -16,14 +16,7 @@ const App = () => {
   const [portfolio, setPortfolio] = useState({ holdings: [] });
   const [userInfo, setUserInfo] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [browsableStocks, setBrowsableStocks] = useState([]);
-  const [filteredStocks, setFilteredStocks] = useState([]);
-  const [allStocks, setAllStocks] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [hasMoreStocks, setHasMoreStocks] = useState(true);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
-  const STOCKS_PER_PAGE = 12;
 
 
   useEffect(() => {
@@ -87,14 +80,13 @@ const App = () => {
     console.log('Calculating portfolio data:', { portfolio, userInfo });
     
     if (!portfolio?.holdings || portfolio.holdings.length === 0) {
-      console.log('No holdings found, using fallback data');
-      // Return fallback data when no real data is available
+      console.log('No holdings found, returning zero values');
       return {
-        totalValue: 125430.50,
-        dayChange: 2845.30,
-        dayChangePercent: 2.32,
-        totalGain: 18745.50,
-        totalGainPercent: 17.5
+        totalValue: 0,
+        dayChange: 0,
+        dayChangePercent: 0,
+        totalGain: 0,
+        totalGainPercent: 0
       };
     }
 
@@ -156,40 +148,25 @@ const App = () => {
       }
     }
     
-    // Return mock holdings for demonstration when no valid data
-    return [
-      { symbol: 'AAPL', name: 'Apple Inc', quantity: 50, shares: 50, price: 175.50, average_cost: 150.00 },
-      { symbol: 'GOOGL', name: 'Alphabet Inc', quantity: 25, shares: 25, price: 135.20, average_cost: 120.00 },
-      { symbol: 'MSFT', name: 'Microsoft Corp', quantity: 75, shares: 75, price: 420.10, average_cost: 380.00 },
-      { symbol: 'TSLA', name: 'Tesla Inc', quantity: 30, shares: 30, price: 185.75, average_cost: 200.00 },
-      { symbol: 'NVDA', name: 'NVIDIA Corp', quantity: 20, shares: 20, price: 498.32, average_cost: 450.00 }
-    ];
+    // Return empty array when no valid data (no more mock data)
+    return [];
   };
 
   // Get effective portfolio data for AI (fallback when real data is invalid)
   const getEffectivePortfolioData = () => {
-    // If real data has valid total value, use it
+    // Always try to use real data first
     if (realPortfolioData.totalValue > 0) {
       return realPortfolioData;
     }
     
-    // Otherwise use fallback data
+    // If no real data, return minimal fallback
     return {
-      totalValue: 125430.50,
-      dayChange: 2845.30,
-      dayChangePercent: 2.32,
-      totalGain: 18245.75,
-      totalGainPercent: 17.01
+      totalValue: 0,
+      dayChange: 0,
+      dayChangePercent: 0,
+      totalGain: 0,
+      totalGainPercent: 0
     };
-  };
-
-  // Sample data (keeping existing data structure for fallback)
-  const portfolioData = {
-    totalValue: 125430.50,
-    dayChange: 2845.30,
-    dayChangePercent: 2.32,
-    totalGain: 18745.50,
-    totalGainPercent: 17.5
   };
 
   const performanceData = [
@@ -424,13 +401,8 @@ const App = () => {
       setBrowsableStocks(prev => [...prev, ...uniqueResults]);
     }
     
-    setFilteredStocks(searchResults);
-  };
-
-  // Filter stocks based on search query
-  useEffect(() => {
-    searchAllStocks(searchQuery);
-  }, [searchQuery, browsableStocks, allStocks]);
+    fetchWatchlistData();
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -456,11 +428,7 @@ const App = () => {
         return <BrowseStocks 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          filteredStocks={filteredStocks}
           setSelectedStock={setSelectedStock}
-          loadMoreStocks={loadMoreStocks}
-          loading={loading}
-          hasMoreStocks={hasMoreStocks}
         />;
       default:
         return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
