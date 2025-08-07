@@ -435,7 +435,17 @@ const App = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
+        return (
+          <Overview
+            portfolioData={portfolioData}
+            portfolio={portfolio}
+            watchlist={watchlist}
+            performanceData={performanceData}
+            setSelectedStock={setSelectedStock}
+            setActiveTab={setActiveTab}
+          />
+        );
+
       case "holdings":
         return <Holdings portfolio={portfolio} setSelectedStock={setSelectedStock} />;
       case "performance":
