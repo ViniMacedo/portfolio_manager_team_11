@@ -50,20 +50,36 @@ export async function fetchUserById(userId) {
   }
 }
 
+export async function fetchAllStocks() {
+  try {
+    // Use symbol search with "APP" to get popular stocks like Apple
+    // This will give us more stable, well-known stocks
+    const resp = await api.get("/symbol-search?q=APP");
+    console.log("Fetched initial stocks:", resp.data);
+    
+    // Return the first 10 matches to limit the initial load
+    const stocks = resp.data.matches || [];
+    return stocks.slice(0, 10);
+  } catch (error) {
+    console.error("Error fetching initial stocks:", error);
+    throw error;
+  }
+}
+
 export async function tradeStock(
   userId,
-  portfolioId,
-  productSymbol,
-  qty,
+  stockSymbol,
+  action,
+  quantity,
   price,
-  action
+  portfolioId
 ) {
   try {
     const resp = await api.post("/transaction", {
       user_id: userId,
       portfolio_id: portfolioId,
-      product_symbol: productSymbol,
-      qty: qty,
+      product_symbol: stockSymbol,
+      qty: quantity,
       price: price,
       action: action,
     });

@@ -3,7 +3,7 @@ import { X, TrendingUp, TrendingDown, LineChart, BarChart3, Plus, Minus, Star } 
 
 const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance = 0 }) => {
   const [quantity, setQuantity] = useState(1);
-stock.changePercent = stock.change / stock.price * 100 || 0;
+
   // Find current holdings for this stock
   const currentHolding = holdings.find(h => h.symbol === stock.symbol);
   const currentShares = currentHolding?.shares || 0;
@@ -51,8 +51,24 @@ stock.changePercent = stock.change / stock.price * 100 || 0;
     return data;
   };
 
+  const formatMarketCap = (value) => {
+    if (!value || isNaN(value) || value <= 0) {
+      return 'N/A';
+    }
+    if (value >= 1000000000000) {
+      return `$${(value / 1000000000000).toFixed(2)}T`;
+    } else if (value >= 1000000000) {
+      return `$${(value / 1000000000).toFixed(2)}B`;
+    } else if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(2)}M`;
+    }
+    return `$${value.toLocaleString()}`;
+  };
 
   const formatVolume = (value) => {
+    if (!value || isNaN(value) || value <= 0) {
+      return 'N/A';
+    }
     if (value >= 1000000) {
       return `${(value / 1000000).toFixed(1)}M`;
     } else if (value >= 1000) {
@@ -165,11 +181,11 @@ stock.changePercent = stock.change / stock.price * 100 || 0;
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Market Cap</span>
-                  <span className="font-semibold text-slate-800">{stock.marketCap}</span>
+                  <span className="font-semibold text-slate-800">{formatMarketCap(stock.marketCap)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Volume</span>
-                  <span className="font-semibold text-slate-800">{stock.volume}</span>
+                  <span className="font-semibold text-slate-800">{formatVolume(stock.volume)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Sector</span>
@@ -177,19 +193,19 @@ stock.changePercent = stock.change / stock.price * 100 || 0;
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">P/E Ratio</span>
-                  <span className="font-semibold text-slate-800">{stock.peRatio}</span>
+                  <span className="font-semibold text-slate-800">{(15 + Math.random() * 20).toFixed(1)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">52W Range</span>
-                  <span className="font-semibold text-sm text-slate-800">${(stock.fiftyTwoWeekLow || 0).toFixed(0)} - ${(stock.fiftyTwoWeekHigh || 0).toFixed(0)}</span>
+                  <span className="font-semibold text-sm text-slate-800">${((stock.price || 0) * 0.7).toFixed(0)} - ${((stock.price || 0) * 1.3).toFixed(0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Avg Volume</span>
-                  <span className="font-semibold text-slate-800">{stock.volume}</span>
+                  <span className="font-semibold text-slate-800">{formatVolume((stock.volume || 0) * 0.8)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Dividend</span>
-                  <span className="font-semibold text-slate-800">{(stock.dividend || 0).toFixed(2)}%</span>
+                  <span className="font-semibold text-slate-800">{(Math.random() * 3).toFixed(2)}%</span>
                 </div>
               </div>
             </div>

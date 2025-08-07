@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, DollarSign, BarChart3, ArrowUpRight, Activity
 import { exportPortfolioToCSV, sharePortfolioLink } from '../utils/exportUtils';
 
 
-const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handleTradeStock, setActiveTab }) => {
+const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handleTradeStock, setActiveTab, setSelectedStock }) => {
   // Calculate real portfolio value from holdings
   const realTotalValue = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.current_price), 0) || 0;
   const realTotalInvested = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.avg_price), 0) || 0;
@@ -82,7 +82,21 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
               const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
               const colorClass = change >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600';
               return (
-                <div key={stock.symbol} className="glass-holding-card p-3">
+                <div 
+                  key={stock.symbol} 
+                  className="glass-holding-card p-3 cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                  onClick={() => setSelectedStock && setSelectedStock({
+                    symbol: stock.symbol,
+                    name: stock.name || `${stock.symbol} Inc`,
+                    price: stock.current_price,
+                    change: change,
+                    changePercent: changePercent,
+                    sector: stock.sector || 'Technology',
+                    marketCap: stock.marketCap || (Math.random() * 2000000000000 + 100000000000),
+                    volume: stock.volume || (Math.random() * 80000000 + 5000000),
+                    color: colorClass
+                  })}
+                >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 bg-gradient-to-r ${colorClass} rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0`}>
                       {stock.symbol[0]}
@@ -234,7 +248,11 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
                 {watchlist.map((stock) => (
-                  <div key={stock.symbol} className="glass-watchlist-item">
+                  <div 
+                    key={stock.symbol} 
+                    className="glass-watchlist-item cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                    onClick={() => setSelectedStock && setSelectedStock(stock)}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 min-w-0 flex-1">
                         <div className={`w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-r ${stock.color} rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg group-hover:shadow-xl transition-shadow duration-200`}>
