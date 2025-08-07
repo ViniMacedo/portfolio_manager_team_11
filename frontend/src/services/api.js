@@ -50,7 +50,7 @@ export async function fetchUserById(userId) {
   }
 }
 
-export async function fetchAllStocks() {
+export function fetchAllStocks() {
   // Return a curated list of popular stocks without API calls
   // This is more efficient than trying to search for "all stocks"
   const popularStocks = [
