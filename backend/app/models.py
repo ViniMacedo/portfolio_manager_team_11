@@ -74,7 +74,6 @@ class Holding(db.Model):
     product_symbol = db.Column(db.String(255), nullable=False)
     qty = db.Column(db.Numeric, nullable=False)
     avg_price = db.Column(db.Numeric, nullable=False)
-    current_price = db.Column(db.Numeric, nullable=False)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
     product_type = db.Column(db.Enum(ProductType), nullable=False)
 
@@ -85,7 +84,6 @@ class Holding(db.Model):
             'symbol': self.product_symbol,
             'shares': float(self.qty) if self.qty else 0,
             'avg_price': float(self.avg_price) if self.avg_price else 0,
-            'current_price': float(self.current_price) if self.current_price else 0,
             'last_updated': self.last_updated.isoformat(),
             'product_type': self.product_type.value
         }
