@@ -179,227 +179,31 @@ const App = () => {
     { date: 'Jul', value: 125430, change: 5.8 }
   ];
 
-  const watchlist = [
-    { symbol: 'NVDA', name: 'NVIDIA Corp', price: 498.32, change: 12.45, changePercent: 2.56, color: 'from-green-500 to-emerald-400' },
-    { symbol: 'META', name: 'Meta Platforms', price: 312.87, change: -5.43, changePercent: -1.71, color: 'from-blue-500 to-indigo-400' },
-    { symbol: 'NFLX', name: 'Netflix Inc', price: 445.23, change: 8.90, changePercent: 2.04, color: 'from-red-500 to-pink-400' }
-  ];
-
-  // Comprehensive stock database - much larger dataset
-  const createComprehensiveStockDatabase = () => {
-    const sectors = ['Technology', 'Financial Services', 'Healthcare', 'Consumer Discretionary', 'Energy', 'Materials', 'Industrials', 'Utilities', 'Real Estate', 'Consumer Staples'];
-    const colors = [
-      'from-blue-500 to-cyan-400', 'from-emerald-500 to-teal-400', 'from-purple-500 to-pink-400',
-      'from-orange-500 to-red-400', 'from-indigo-500 to-blue-400', 'from-green-500 to-emerald-400',
-      'from-red-500 to-pink-400', 'from-slate-500 to-gray-400', 'from-teal-500 to-cyan-400',
-      'from-violet-500 to-purple-400', 'from-cyan-500 to-blue-400', 'from-yellow-500 to-orange-400'
-    ];
-
-    const stockData = [
-      { symbol: 'AAPL', name: 'Apple Inc', sector: 'Technology' },
-      { symbol: 'GOOGL', name: 'Alphabet Inc', sector: 'Technology' },
-      { symbol: 'MSFT', name: 'Microsoft Corp', sector: 'Technology' },
-      { symbol: 'TSLA', name: 'Tesla Inc', sector: 'Consumer Discretionary' },
-      { symbol: 'AMZN', name: 'Amazon.com Inc', sector: 'Consumer Discretionary' },
-      { symbol: 'NVDA', name: 'NVIDIA Corp', sector: 'Technology' },
-      { symbol: 'META', name: 'Meta Platforms', sector: 'Technology' },
-      { symbol: 'NFLX', name: 'Netflix Inc', sector: 'Technology' },
-      { symbol: 'JPM', name: 'JPMorgan Chase', sector: 'Financial Services' },
-      { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare' },
-      { symbol: 'V', name: 'Visa Inc', sector: 'Financial Services' },
-      { symbol: 'PG', name: 'Procter & Gamble', sector: 'Consumer Staples' },
-      { symbol: 'UNH', name: 'UnitedHealth Group', sector: 'Healthcare' },
-      { symbol: 'HD', name: 'Home Depot', sector: 'Consumer Discretionary' },
-      { symbol: 'MA', name: 'Mastercard Inc', sector: 'Financial Services' },
-      { symbol: 'BAC', name: 'Bank of America', sector: 'Financial Services' },
-      { symbol: 'XOM', name: 'Exxon Mobil', sector: 'Energy' },
-      { symbol: 'ABBV', name: 'AbbVie Inc', sector: 'Healthcare' },
-      { symbol: 'PFE', name: 'Pfizer Inc', sector: 'Healthcare' },
-      { symbol: 'KO', name: 'Coca-Cola', sector: 'Consumer Staples' },
-      { symbol: 'AVGO', name: 'Broadcom Inc', sector: 'Technology' },
-      { symbol: 'CVX', name: 'Chevron Corp', sector: 'Energy' },
-      { symbol: 'LLY', name: 'Eli Lilly', sector: 'Healthcare' },
-      { symbol: 'TMO', name: 'Thermo Fisher', sector: 'Healthcare' },
-      { symbol: 'ACN', name: 'Accenture', sector: 'Technology' },
-      { symbol: 'COST', name: 'Costco Wholesale', sector: 'Consumer Staples' },
-      { symbol: 'ABT', name: 'Abbott Laboratories', sector: 'Healthcare' },
-      { symbol: 'ADBE', name: 'Adobe Inc', sector: 'Technology' },
-      { symbol: 'CRM', name: 'Salesforce', sector: 'Technology' },
-      { symbol: 'NKE', name: 'Nike Inc', sector: 'Consumer Discretionary' },
-      { symbol: 'TXN', name: 'Texas Instruments', sector: 'Technology' },
-      { symbol: 'DHR', name: 'Danaher Corp', sector: 'Healthcare' },
-      { symbol: 'WMT', name: 'Walmart Inc', sector: 'Consumer Staples' },
-      { symbol: 'VZ', name: 'Verizon Communications', sector: 'Technology' },
-      { symbol: 'ORCL', name: 'Oracle Corp', sector: 'Technology' },
-      { symbol: 'CSCO', name: 'Cisco Systems', sector: 'Technology' },
-      { symbol: 'PEP', name: 'PepsiCo Inc', sector: 'Consumer Staples' },
-      { symbol: 'T', name: 'AT&T Inc', sector: 'Technology' },
-      { symbol: 'MRK', name: 'Merck & Co', sector: 'Healthcare' },
-      { symbol: 'INTC', name: 'Intel Corp', sector: 'Technology' },
-      { symbol: 'WFC', name: 'Wells Fargo', sector: 'Financial Services' },
-      { symbol: 'MCD', name: 'McDonald\'s Corp', sector: 'Consumer Discretionary' },
-      { symbol: 'DIS', name: 'Walt Disney', sector: 'Consumer Discretionary' },
-      { symbol: 'BMY', name: 'Bristol Myers Squibb', sector: 'Healthcare' },
-      { symbol: 'PM', name: 'Philip Morris', sector: 'Consumer Staples' },
-      { symbol: 'NEE', name: 'NextEra Energy', sector: 'Utilities' },
-      { symbol: 'RTX', name: 'Raytheon Technologies', sector: 'Industrials' },
-      { symbol: 'UPS', name: 'United Parcel Service', sector: 'Industrials' },
-      { symbol: 'LOW', name: 'Lowe\'s Companies', sector: 'Consumer Discretionary' },
-      { symbol: 'IBM', name: 'IBM Corp', sector: 'Technology' },
-      { symbol: 'AMGN', name: 'Amgen Inc', sector: 'Healthcare' },
-      { symbol: 'HON', name: 'Honeywell International', sector: 'Industrials' },
-      { symbol: 'QCOM', name: 'Qualcomm Inc', sector: 'Technology' },
-      { symbol: 'SPGI', name: 'S&P Global', sector: 'Financial Services' },
-      { symbol: 'CAT', name: 'Caterpillar Inc', sector: 'Industrials' },
-      { symbol: 'GS', name: 'Goldman Sachs', sector: 'Financial Services' },
-      { symbol: 'AMT', name: 'American Tower', sector: 'Real Estate' },
-      { symbol: 'BLK', name: 'BlackRock Inc', sector: 'Financial Services' },
-      { symbol: 'AXP', name: 'American Express', sector: 'Financial Services' },
-      { symbol: 'ISRG', name: 'Intuitive Surgical', sector: 'Healthcare' },
-      { symbol: 'TGT', name: 'Target Corp', sector: 'Consumer Discretionary' },
-      { symbol: 'MMM', name: '3M Company', sector: 'Industrials' },
-      { symbol: 'DE', name: 'Deere & Company', sector: 'Industrials' },
-      { symbol: 'GILD', name: 'Gilead Sciences', sector: 'Healthcare' },
-      { symbol: 'AMD', name: 'Advanced Micro Devices', sector: 'Technology' },
-      { symbol: 'SBUX', name: 'Starbucks Corp', sector: 'Consumer Discretionary' },
-      { symbol: 'MDLZ', name: 'Mondelez International', sector: 'Consumer Staples' },
-      { symbol: 'INTU', name: 'Intuit Inc', sector: 'Technology' },
-      { symbol: 'NOW', name: 'ServiceNow Inc', sector: 'Technology' },
-      { symbol: 'GE', name: 'General Electric', sector: 'Industrials' },
-      { symbol: 'ADP', name: 'Automatic Data Processing', sector: 'Technology' },
-      { symbol: 'CCI', name: 'Crown Castle', sector: 'Real Estate' },
-      { symbol: 'TJX', name: 'TJX Companies', sector: 'Consumer Discretionary' },
-      { symbol: 'USB', name: 'U.S. Bancorp', sector: 'Financial Services' },
-      { symbol: 'CVS', name: 'CVS Health', sector: 'Healthcare' },
-      { symbol: 'SO', name: 'Southern Company', sector: 'Utilities' },
-      { symbol: 'MO', name: 'Altria Group', sector: 'Consumer Staples' },
-      { symbol: 'PLD', name: 'Prologis Inc', sector: 'Real Estate' },
-      { symbol: 'CI', name: 'Cigna Corp', sector: 'Healthcare' },
-      { symbol: 'DUK', name: 'Duke Energy', sector: 'Utilities' },
-      { symbol: 'ZTS', name: 'Zoetis Inc', sector: 'Healthcare' },
-      { symbol: 'CL', name: 'Colgate-Palmolive', sector: 'Consumer Staples' },
-      { symbol: 'NSC', name: 'Norfolk Southern', sector: 'Industrials' },
-      { symbol: 'AON', name: 'Aon PLC', sector: 'Financial Services' },
-      { symbol: 'TFC', name: 'Truist Financial', sector: 'Financial Services' },
-      { symbol: 'FIS', name: 'Fidelity National Info', sector: 'Technology' },
-      { symbol: 'BSX', name: 'Boston Scientific', sector: 'Healthcare' },
-      { symbol: 'EMR', name: 'Emerson Electric', sector: 'Industrials' },
-      { symbol: 'ITW', name: 'Illinois Tool Works', sector: 'Industrials' },
-      { symbol: 'SHW', name: 'Sherwin-Williams', sector: 'Materials' },
-      { symbol: 'PNC', name: 'PNC Financial Services', sector: 'Financial Services' },
-      { symbol: 'ICE', name: 'Intercontinental Exchange', sector: 'Financial Services' },
-      { symbol: 'GM', name: 'General Motors', sector: 'Consumer Discretionary' },
-      { symbol: 'F', name: 'Ford Motor', sector: 'Consumer Discretionary' },
-      { symbol: 'FDX', name: 'FedEx Corp', sector: 'Industrials' },
-      { symbol: 'ECL', name: 'Ecolab Inc', sector: 'Materials' },
-      { symbol: 'APD', name: 'Air Products', sector: 'Materials' },
-      { symbol: 'SYK', name: 'Stryker Corp', sector: 'Healthcare' },
-      { symbol: 'COF', name: 'Capital One Financial', sector: 'Financial Services' },
-      { symbol: 'FISV', name: 'Fiserv Inc', sector: 'Technology' },
-      { symbol: 'EOG', name: 'EOG Resources', sector: 'Energy' },
-      { symbol: 'EL', name: 'Estee Lauder', sector: 'Consumer Discretionary' },
-      { symbol: 'MCO', name: 'Moody\'s Corp', sector: 'Financial Services' },
-      { symbol: 'D', name: 'Dominion Energy', sector: 'Utilities' },
-      { symbol: 'CME', name: 'CME Group', sector: 'Financial Services' },
-      { symbol: 'WM', name: 'Waste Management', sector: 'Industrials' },
-      { symbol: 'NOC', name: 'Northrop Grumman', sector: 'Industrials' },
-      { symbol: 'PSA', name: 'Public Storage', sector: 'Real Estate' },
-      { symbol: 'COP', name: 'ConocoPhillips', sector: 'Energy' }
-    ];
-
-    return stockData.map((stock, index) => ({
-      ...stock,
-      price: Math.random() * 400 + 50, // Random price between $50-$450
-      change: (Math.random() - 0.5) * 20, // Random change between -$10 to +$10
-      changePercent: (Math.random() - 0.5) * 8, // Random change between -4% to +4%
-      marketCap: Math.random() * 2000000000000 + 100000000000, // Random market cap
-      volume: Math.random() * 80000000 + 5000000, // Random volume
-      color: colors[index % colors.length]
-    }));
-  };
-
-  // Fetch stock data from backend API
+  // Create watchlist from real API data - fetch real prices
+  const [watchlist, setWatchlist] = useState([]);
+  
   useEffect(() => {
-    const loadStocksFromAPI = async () => {
-      try {
-        console.log('Fetching stocks from backend API...');
-        const stocksData = await fetchAllStocks();
-        console.log('Received stocks from API:', stocksData);
-        
-        setAllStocks(stocksData);
-        
-        // Load initial page
-        const initialStocks = stocksData.slice(0, STOCKS_PER_PAGE);
-        setBrowsableStocks(initialStocks);
-        setFilteredStocks(initialStocks);
-        
-      } catch (error) {
-        console.error('Failed to fetch stocks from API, using fallback:', error);
-        // Fallback to mock data if API fails
-        console.log('Using mock stock database as fallback...');
-        const allStocksData = createComprehensiveStockDatabase();
-        setAllStocks(allStocksData);
-        
-        const initialStocks = allStocksData.slice(0, STOCKS_PER_PAGE);
-        setBrowsableStocks(initialStocks);
-        setFilteredStocks(initialStocks);
+    const fetchWatchlistData = async () => {
+      const watchlistSymbols = ['NVDA', 'META', 'NFLX'];
+      const watchlistData = [];
+      
+      for (const symbol of watchlistSymbols) {
+        try {
+          const stockData = await fetchStockBySymbol(symbol);
+          watchlistData.push({
+            symbol: symbol,
+            name: stockData.name || `${symbol} Inc`,
+            price: stockData.price || 0,
+            change: stockData.change || 0,
+            changePercent: stockData.change ? ((stockData.change / stockData.price) * 100).toFixed(2) : 0,
+            color: 'from-blue-500 to-indigo-400'
+          });
+        } catch (error) {
+          console.error(`Failed to fetch watchlist data for ${symbol}:`, error);
+        }
       }
+      setWatchlist(watchlistData);
     };
-    
-    loadStocksFromAPI();
-  }, []);
-
-  // Load more stocks function
-  const loadMoreStocks = async () => {
-    if (loading || !hasMoreStocks) return;
-    
-    setLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const nextPage = currentPage + 1;
-    const startIndex = (nextPage - 1) * STOCKS_PER_PAGE;
-    const endIndex = startIndex + STOCKS_PER_PAGE;
-    const newStocks = allStocks.slice(startIndex, endIndex);
-    
-    if (newStocks.length === 0) {
-      setHasMoreStocks(false);
-    } else {
-      setBrowsableStocks(prev => [...prev, ...newStocks]);
-      setCurrentPage(nextPage);
-    }
-    
-    setLoading(false);
-  };
-
-  // Enhanced search function that searches all stocks
-  const searchAllStocks = (query) => {
-    if (query.trim() === '') {
-      setFilteredStocks(browsableStocks);
-      return;
-    }
-
-    const q = query.toLowerCase();
-    const searchResults = allStocks.filter(s =>
-      s.symbol.toLowerCase().includes(q) ||
-      s.name.toLowerCase().includes(q) ||
-      s.sector.toLowerCase().includes(q)
-    );
-
-    // If we found results not in browsableStocks, add them
-    const uniqueResults = [];
-    const browsableSymbols = new Set(browsableStocks.map(s => s.symbol));
-    
-    searchResults.forEach(stock => {
-      if (!browsableSymbols.has(stock.symbol)) {
-        uniqueResults.push(stock);
-      }
-    });
-
-    if (uniqueResults.length > 0) {
-      setBrowsableStocks(prev => [...prev, ...uniqueResults]);
-    }
     
     fetchWatchlistData();
   }, []);
@@ -407,17 +211,7 @@ const App = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return (
-          <Overview
-            portfolioData={portfolioData}
-            portfolio={portfolio}
-            watchlist={watchlist}
-            performanceData={performanceData}
-            setSelectedStock={setSelectedStock}
-            setActiveTab={setActiveTab}
-          />
-        );
-
+        return <Overview portfolioData={realPortfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
       case "holdings":
         return <Holdings portfolio={portfolio} setSelectedStock={setSelectedStock} />;
       case "performance":
@@ -431,7 +225,7 @@ const App = () => {
           setSelectedStock={setSelectedStock}
         />;
       default:
-        return <Overview portfolioData={portfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
+        return <Overview portfolioData={realPortfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
     }
   };
 

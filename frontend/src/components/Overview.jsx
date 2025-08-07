@@ -145,14 +145,14 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                   <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                     <Activity className="h-4 w-4 lg:h-5 lg:w-5" />
                   </div>
-                  <div className="text-lg lg:text-xl font-bold mb-1">{portfolioData.dayChangePercent}%</div>
+                  <div className="text-lg lg:text-xl font-bold mb-1">{portfolioData.dayChangePercent.toFixed(2)}%</div>
                   <div className="text-xs lg:text-sm opacity-90">Today's Return</div>
                 </div>
                 <div className="text-center flex-1 min-w-0">
                   <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
                     <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5" />
                   </div>
-                  <div className="text-lg lg:text-xl font-bold mb-1">${(realTotalValue / (portfolio.holdings?.length || 1)).toFixed(0)}</div>
+                  <div className="text-lg lg:text-xl font-bold mb-1">${(realTotalValue / Math.max(portfolio.holdings?.length || 1, 1)).toLocaleString()}</div>
                   <div className="text-xs lg:text-sm opacity-90">Avg Position</div>
                 </div>
               </div>
@@ -198,7 +198,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <FileText className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-indigo-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Reports</div>
               </button>
-              
+
               <button 
                 onClick={() => exportPortfolioToCSV(portfolio, portfolioData)}
                 className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-green-200 group"
@@ -206,7 +206,7 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <Download className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-green-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Export</div>
               </button>
-              
+
               <button 
                 onClick={() => sharePortfolioLink(portfolio, portfolioData)}
                 className="glass-button text-center group"
@@ -214,17 +214,17 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                 <Share className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Share</div>
               </button>
-              
+
               <button className="glass-button text-center">
                 <Target className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Goals</div>
               </button>
-              
+
               <button className="glass-button text-center">
                 <Calendar className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Calendar</div>
               </button>
-              
+
               <button className="glass-button text-center">
                 <Bookmark className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-cyan-600 group-hover:scale-110 transition-transform duration-200" />
                 <div className="text-xs font-semibold text-gray-700">Saved</div>
@@ -303,7 +303,6 @@ const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handle
                     <span className="font-semibold text-xs">Buy Order</span>
                   </div>
                 </button>
-                
                 <button 
                   onClick={() => {
                     setActiveTab('performance');

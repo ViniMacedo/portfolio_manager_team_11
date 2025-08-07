@@ -51,19 +51,33 @@ export async function fetchUserById(userId) {
 }
 
 export async function fetchAllStocks() {
-  try {
-    // Use symbol search with "APP" to get popular stocks like Apple
-    // This will give us more stable, well-known stocks
-    const resp = await api.get("/symbol-search?q=APP");
-    console.log("Fetched initial stocks:", resp.data);
-    
-    // Return the first 10 matches to limit the initial load
-    const stocks = resp.data.matches || [];
-    return stocks.slice(0, 10);
-  } catch (error) {
-    console.error("Error fetching initial stocks:", error);
-    throw error;
-  }
+  // Return a curated list of popular stocks without API calls
+  // This is more efficient than trying to search for "all stocks"
+  const popularStocks = [
+    { symbol: 'AAPL', name: 'Apple Inc' },
+    { symbol: 'GOOGL', name: 'Alphabet Inc' },
+    { symbol: 'MSFT', name: 'Microsoft Corp' },
+    { symbol: 'AMZN', name: 'Amazon.com Inc' },
+    { symbol: 'TSLA', name: 'Tesla Inc' },
+    { symbol: 'META', name: 'Meta Platforms Inc' },
+    { symbol: 'NVDA', name: 'NVIDIA Corp' },
+    { symbol: 'NFLX', name: 'Netflix Inc' },
+    { symbol: 'UBER', name: 'Uber Technologies Inc' },
+    { symbol: 'CRM', name: 'Salesforce Inc' },
+    { symbol: 'COIN', name: 'Coinbase Global Inc' },
+    { symbol: 'PYPL', name: 'PayPal Holdings Inc' },
+    { symbol: 'SPOT', name: 'Spotify Technology SA' },
+    { symbol: 'AMD', name: 'Advanced Micro Devices Inc' },
+    { symbol: 'INTC', name: 'Intel Corp' },
+    { symbol: 'JPM', name: 'JPMorgan Chase & Co' },
+    { symbol: 'BAC', name: 'Bank of America Corp' },
+    { symbol: 'JNJ', name: 'Johnson & Johnson' },
+    { symbol: 'V', name: 'Visa Inc' },
+    { symbol: 'WMT', name: 'Walmart Inc' }
+  ];
+  
+  console.log("Returning popular stocks for browsing:", popularStocks);
+  return popularStocks;
 }
 
 export async function tradeStock(

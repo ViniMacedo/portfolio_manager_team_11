@@ -35,21 +35,6 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
     const value = parseInt(e.target.value) || 1;
     setQuantity(Math.max(1, value));
   };
-  // Generate sample chart data for selected stock
-  const generateChartData = (stock) => {
-    const basePrice = stock.price;
-    const data = [];
-    for (let i = 30; i >= 0; i--) {
-      const variance = (Math.random() - 0.5) * 0.1;
-      const price = basePrice * (1 + variance - (i * 0.002));
-      data.push({
-        day: 30 - i,
-        price: Math.max(price, basePrice * 0.8),
-        volume: Math.floor(Math.random() * 50000000) + 10000000
-      });
-    }
-    return data;
-  };
 
   const formatMarketCap = (value) => {
     if (!value || isNaN(value) || value <= 0) {
@@ -76,10 +61,6 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
     }
     return value.toLocaleString();
   };
-
-  const chartData = generateChartData(stock);
-  const maxPrice = Math.max(...chartData.map(d => d.price));
-  const minPrice = Math.min(...chartData.map(d => d.price));
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 flex items-center justify-center p-4">
@@ -108,9 +89,9 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
             </div>
             <div className="text-right">
               <div className="text-4xl font-bold">${(stock.price || 0).toFixed(2)}</div>
-              <div className={`text-xl font-semibold flex items-center justify-end ${(stock.changePercent || 0) >= 0 ? 'text-green-200' : 'text-red-200'}`}>
-                {(stock.changePercent || 0) >= 0 ? <TrendingUp className="h-5 w-5 mr-1" /> : <TrendingDown className="h-5 w-5 mr-1" />}
-                {(stock.changePercent || 0) >= 0 ? '+' : ''}{(stock.changePercent || 0).toFixed(2)}% (${(stock.change || 0) >= 0 ? '+' : ''}{(stock.change || 0).toFixed(2)})
+              <div className={`text-xl font-semibold flex items-center justify-end ${Number(stock.changePercent || 0) >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+                {Number(stock.changePercent || 0) >= 0 ? <TrendingUp className="h-5 w-5 mr-1" /> : <TrendingDown className="h-5 w-5 mr-1" />}
+                {Number(stock.changePercent || 0) >= 0 ? '+' : ''}{Number(stock.changePercent || 0).toFixed(2)}% (${Number(stock.change || 0) >= 0 ? '+' : ''}{Number(stock.change || 0).toFixed(2)})
               </div>
             </div>
           </div>
@@ -119,57 +100,33 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
         <div className="p-6 grid grid-cols-4 gap-6 max-h-[70vh] overflow-y-auto">
           {/* Left Column - Charts */}
           <div className="col-span-2 space-y-6 flex flex-col h-full">
-            {/* Price Chart */}
+            {/* Chart Placeholder - No Mock Data */}
             <div className="glass-chart-container flex-1">
               <h3 className="text-lg font-bold mb-4 flex items-center text-slate-800">
                 <LineChart className="h-5 w-5 mr-2 text-blue-600" />
-                30-Day Price Trend
+                Price Chart
               </h3>
-              <div className="h-48 flex items-end justify-between space-x-1">
-                {chartData.map((item, index) => (
-                  <div key={index} className="flex flex-col items-center space-y-1 flex-1">
-                    <div 
-                      className="w-full bg-blue-500 rounded-t-sm transition-all duration-300 hover:bg-blue-600 cursor-pointer"
-                      style={{ 
-                        height: `${Math.max(((item.price - minPrice) / (maxPrice - minPrice)) * 160, 4)}px`,
-                        minHeight: '4px'
-                      }}
-                      title={`Day ${item.day}: $${item.price.toFixed(2)}`}
-                    ></div>
-                    {index % 5 === 0 && (
-                      <span className="text-xs text-gray-500">{item.day}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
-                <span>${minPrice.toFixed(2)}</span>
-                <span className="font-semibold">30 Days</span>
-                <span>${maxPrice.toFixed(2)}</span>
+              <div className="h-48 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+                <div className="text-center text-slate-500">
+                  <LineChart className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm font-medium">Chart data unavailable</p>
+                  <p className="text-xs">Real-time charts coming soon</p>
+                </div>
               </div>
             </div>
 
-            {/* Volume Chart */}
+            {/* Volume Placeholder */}
             <div className="glass-chart-container flex-1">
               <h3 className="text-lg font-bold mb-4 flex items-center text-slate-800">
                 <BarChart3 className="h-5 w-5 mr-2 text-green-600" />
-                Volume Trend
+                Volume Chart
               </h3>
-              <div className="h-32 flex items-end justify-between space-x-1">
-                {chartData.slice(-14).map((item, index) => (
-                  <div key={index} className="flex flex-col items-center space-y-1 flex-1">
-                    <div 
-                      className="w-full bg-green-500 rounded-t-sm transition-all duration-300 hover:bg-green-600 cursor-pointer"
-                      style={{ 
-                        height: `${Math.max((item.volume / 100000000) * 100, 4)}px`,
-                        minHeight: '4px'
-                      }}
-                      title={`Volume: ${formatVolume(item.volume)}`}
-                    ></div>
-                  </div>
-                ))}
+              <div className="h-32 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+                <div className="text-center text-slate-500">
+                  <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs">Volume data unavailable</p>
+                </div>
               </div>
-              <div className="text-center text-xs text-gray-500 mt-2">14-Day Volume</div>
             </div>
           </div>
 
@@ -193,19 +150,19 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">P/E Ratio</span>
-                  <span className="font-semibold text-slate-800">{(15 + Math.random() * 20).toFixed(1)}</span>
+                  <span className="font-semibold text-slate-800">N/A</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">52W Range</span>
-                  <span className="font-semibold text-sm text-slate-800">${((stock.price || 0) * 0.7).toFixed(0)} - ${((stock.price || 0) * 1.3).toFixed(0)}</span>
+                  <span className="font-semibold text-sm text-slate-800">N/A</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Avg Volume</span>
-                  <span className="font-semibold text-slate-800">{formatVolume((stock.volume || 0) * 0.8)}</span>
+                  <span className="font-semibold text-slate-800">{formatVolume(stock.volume)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Dividend</span>
-                  <span className="font-semibold text-slate-800">{(Math.random() * 3).toFixed(2)}%</span>
+                  <span className="font-semibold text-slate-800">N/A</span>
                 </div>
               </div>
             </div>
@@ -215,15 +172,15 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
               <h4 className="font-bold text-purple-900 mb-4">Quick Analysis</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${stock.changePercent >= 2 ? 'bg-green-500' : stock.changePercent >= 0 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                  <div className={`w-3 h-3 rounded-full ${Number(stock.changePercent || 0) >= 2 ? 'bg-green-500' : Number(stock.changePercent || 0) >= 0 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
                   <span className="text-slate-700">
-                    {stock.changePercent >= 2 ? 'Strong Bullish' : stock.changePercent >= 0 ? 'Bullish' : 'Bearish'} Momentum
+                    {Number(stock.changePercent || 0) >= 2 ? 'Strong Bullish' : Number(stock.changePercent || 0) >= 0 ? 'Bullish' : 'Bearish'} Momentum
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${stock.volume > 30000000 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                  <div className={`w-3 h-3 rounded-full ${Number(stock.volume || 0) > 30000000 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
                   <span className="text-slate-700">
-                    {stock.volume > 30000000 ? 'High' : 'Moderate'} Volume
+                    {Number(stock.volume || 0) > 30000000 ? 'High' : 'Moderate'} Volume
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -233,7 +190,7 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 rounded-full bg-purple-500"></div>
                   <span className="text-slate-700">
-                    {(stock.changePercent || 0) >= 0 ? 'Recommended Buy' : 'Hold Position'}
+                    {Number(stock.changePercent || 0) >= 0 ? 'Recommended Buy' : 'Hold Position'}
                   </span>
                 </div>
               </div>
