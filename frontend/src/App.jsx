@@ -125,11 +125,11 @@ const App = () => {
       case "overview":
         return <Overview portfolioData={realPortfolioData} portfolio={portfolio} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
       case "portfolio":
-        return <Portfolio portfolio={portfolio} setSelectedStock={setSelectedStock} />;
+        return <Portfolio portfolio={portfolio} portfolioData={realPortfolioData} setSelectedStock={setSelectedStock} />;
       case "analytics":
-        return <Analytics portfolio={portfolio} setSelectedStock={setSelectedStock} />;
+        return <Analytics portfolio={portfolio} portfolioData={realPortfolioData} setSelectedStock={setSelectedStock} />;
       case "ai-insights":
-        return <AIInsights watchlist={watchlist} setSelectedStock={setSelectedStock} setActiveTab={setActiveTab} />;
+        return <AIInsights portfolio={portfolio} portfolioData={realPortfolioData} watchlist={watchlist} setSelectedStock={setSelectedStock} setActiveTab={setActiveTab} />;
       case "browse":
         return <BrowseStocks 
           searchQuery={searchQuery}

@@ -79,24 +79,9 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
   return (
     <div className="dashboard-grid-2025">
       {/* Search Header */}
-      <div className="card-2025" style={{gridColumn: 'span 12'}}>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 style={{fontSize: '28px', fontWeight: '700', marginBottom: '8px'}}>
-              🚀 Trading Bot
-            </h2>
-            <p style={{color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px'}}>
-              Discover and analyze stocks with AI-powered insights
-            </p>
-          </div>
-          <div className="live-indicator-2025">
-            <div className="status-dot-2025"></div>
-            <span>LIVE</span>
-          </div>
-        </div>
-
+      <div  style={{gridColumn: 'span 12'}}>
         {/* Search Bar */}
-        <div style={{position: 'relative', marginBottom: '20px'}}>
+        <div style={{position: 'relative'}}>
           <div style={{
             background: 'rgba(255, 255, 255, 0.05)',
             backdropFilter: 'blur(20px)',
@@ -124,21 +109,10 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
             />
           </div>
         </div>
-
-        {/* Results Count */}
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '14px',
-          marginBottom: '20px'
-        }}>
-          {loading ? 'Loading stocks...' : `${filteredStocks.length} stocks available`}
-        </div>
       </div>
 
       {/* Stock Grid */}
-      <div className="card-2025" style={{gridColumn: 'span 12'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📊 Available Stocks</h3>
-        
+      <div className="card-2025" style={{gridColumn: 'span 12'}}>        
         <div className="movers-grid-2025">
           {loading ? (
             // Loading placeholders

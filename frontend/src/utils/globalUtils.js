@@ -334,7 +334,7 @@ export const generateAIInsights = (portfolio, metrics = null) => {
   const concentration = calculatePortfolioConcentration(portfolio);
   const insights = [];
 
-  // Performance insights
+  // Always add a performance insight
   if (portfolioMetrics.totalGainPercent < -50) {
     insights.push({
       type: 'warning',
@@ -349,22 +349,43 @@ export const generateAIInsights = (portfolio, metrics = null) => {
       title: 'Strong Performance',
       message: `Excellent returns of ${portfolioMetrics.totalGainPercent.toFixed(1)}%! Consider taking profits or rebalancing.`
     });
-  } else if (portfolioMetrics.totalGainPercent < 0) {
+  } else if (portfolioMetrics.totalGainPercent < -5) {
+    insights.push({
+      type: 'warning',
+      icon: '�',
+      title: 'Portfolio Decline',
+      message: `Portfolio is down ${Math.abs(portfolioMetrics.totalGainPercent).toFixed(1)}%. Monitor key positions and consider rebalancing.`
+    });
+  } else if (portfolioMetrics.totalGainPercent > 5) {
+    insights.push({
+      type: 'success',
+      icon: '📈',
+      title: 'Positive Returns',
+      message: `Portfolio showing ${portfolioMetrics.totalGainPercent.toFixed(1)}% gains. Good momentum building.`
+    });
+  } else {
     insights.push({
       type: 'info',
       icon: '📊',
-      title: 'Portfolio Analysis',
-      message: `Portfolio is down ${Math.abs(portfolioMetrics.totalGainPercent).toFixed(1)}%. Monitor key positions.`
+      title: 'Stable Performance',
+      message: `Portfolio performing within normal range. Continue monitoring for opportunities.`
     });
   }
 
-  // Risk insights
+  // Always add a risk insight
   if (volatility > 50) {
     insights.push({
       type: 'warning',
       icon: '🌪️',
       title: 'High Volatility Alert',
       message: `Portfolio volatility at ${volatility.toFixed(1)}% suggests high risk. Consider stable assets.`
+    });
+  } else if (volatility > 30) {
+    insights.push({
+      type: 'warning',
+      icon: '⚡',
+      title: 'Moderate Risk Level',
+      message: `Volatility at ${volatility.toFixed(1)}% indicates moderate risk. Monitor positions closely.`
     });
   } else if (volatility < 15) {
     insights.push({
@@ -373,13 +394,27 @@ export const generateAIInsights = (portfolio, metrics = null) => {
       title: 'Conservative Portfolio',
       message: `Low volatility of ${volatility.toFixed(1)}% indicates stability but limited growth potential.`
     });
+  } else {
+    insights.push({
+      type: 'info',
+      icon: '📊',
+      title: 'Balanced Risk',
+      message: `Volatility at ${volatility.toFixed(1)}% shows balanced risk profile. Well managed portfolio.`
+    });
   }
 
-  // Concentration insights
-  if (concentration > 50) {
+  // Always add a diversification insight
+  if (concentration > 60) {
     insights.push({
       type: 'warning',
       icon: '🎯',
+      title: 'High Concentration Risk',
+      message: `${concentration.toFixed(1)}% concentrated in top holding. Urgent diversification needed.`
+    });
+  } else if (concentration > 40) {
+    insights.push({
+      type: 'warning',
+      icon: '⚖️',
       title: 'Concentration Risk',
       message: `${concentration.toFixed(1)}% concentrated in top holding. Consider diversification.`
     });
@@ -390,10 +425,24 @@ export const generateAIInsights = (portfolio, metrics = null) => {
       title: 'Single Holding Risk',
       message: 'Portfolio has only one holding. Diversification could reduce risk.'
     });
+  } else if (portfolioMetrics.holdingsCount < 5) {
+    insights.push({
+      type: 'info',
+      icon: '🔄',
+      title: 'Limited Diversification',
+      message: `${portfolioMetrics.holdingsCount} holdings provide basic diversification. Consider adding more positions.`
+    });
+  } else {
+    insights.push({
+      type: 'success',
+      icon: '✨',
+      title: 'Well Diversified',
+      message: `Good diversification with ${portfolioMetrics.holdingsCount} holdings and ${concentration.toFixed(1)}% max concentration.`
+    });
   }
 
-  // Top performer insight
-  if (portfolioMetrics.topPerformer) {
+  // Add top performer insight if available
+  if (portfolioMetrics.topPerformer && portfolioMetrics.bestPerformance) {
     insights.push({
       type: 'success',
       icon: '🏆',
@@ -402,17 +451,7 @@ export const generateAIInsights = (portfolio, metrics = null) => {
     });
   }
 
-  // Default insight
-  if (insights.length === 0) {
-    insights.push({
-      type: 'info',
-      icon: '🤖',
-      title: 'AI Analysis',
-      message: 'Portfolio metrics appear balanced. Continue monitoring for opportunities.'
-    });
-  }
-
-  return insights.slice(0, 3); // Return max 3 insights
+  return insights.slice(0, 4); // Return max 4 insights
 };
 
 // =============================================================================

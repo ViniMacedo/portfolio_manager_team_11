@@ -1,9 +1,50 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, PieChart, Activity, BarChart3, DollarSign } from 'lucide-react';
-import { calculatePortfolioMetrics, formatCurrency, formatPercentage } from '../utils/globalUtils';
+import { formatCurrency, formatPercentage } from '../utils/globalUtils';
 
-const Portfolio = ({ portfolio, setSelectedStock }) => {
-  const metrics = calculatePortfolioMetrics(portfolio);
+const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
+  // Use real portfolio data passed from parent (same as Overview and Analytics)
+  const totalValue = portfolioData?.totalValue || 0;
+  const totalInvested = portfolioData?.totalInvested || 0;
+  const totalGain = totalValue - totalInvested;
+  const totalGainPercent = totalInvested > 0 ? ((totalGain / totalInvested) * 100) : 0;
+
+  // Calculate real top and worst performers from holdings
+  const getPerformers = () => {
+    if (!portfolio.holdings || portfolio.holdings.length === 0) {
+      return { topPerformer: null, worstPerformer: null };
+    }
+
+    let topPerformer = null;
+    let worstPerformer = null;
+    let maxGain = -Infinity;
+    let maxLoss = Infinity;
+
+    portfolio.holdings.forEach(stock => {
+      const shares = stock.shares || stock.quantity || 0;
+      const currentPrice = stock.current_price || stock.price || 0;
+      const avgPrice = stock.avg_price || stock.average_cost || currentPrice;
+      
+      const cost = shares * avgPrice;
+      const value = shares * currentPrice;
+      const gainLoss = value - cost;
+      const changePercent = cost > 0 ? ((gainLoss / cost) * 100) : 0;
+
+      if (changePercent > maxGain) {
+        maxGain = changePercent;
+        topPerformer = { symbol: stock.symbol, changePercent };
+      }
+
+      if (changePercent < maxLoss) {
+        maxLoss = changePercent;
+        worstPerformer = { symbol: stock.symbol, changePercent };
+      }
+    });
+
+    return { topPerformer, worstPerformer };
+  };
+
+  const { topPerformer, worstPerformer } = getPerformers();
 
   return (
     <div className="dashboard-grid-2025">
@@ -12,14 +53,14 @@ const Portfolio = ({ portfolio, setSelectedStock }) => {
         <div className="value-header-2025">
           <div className="value-main-2025">
             <h3 className="section-title-2025">💼 Portfolio Value</h3>
-            <div className="value-amount-2025">${metrics.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="value-amount-2025">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div className="value-change-2025">
-              <span className={`change-badge-2025 ${metrics.totalGain >= 0 ? 'positive-2025' : 'negative-2025'}`}>
-                {metrics.totalGain >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                {metrics.totalGain >= 0 ? '+' : ''}${Math.abs(metrics.totalGain).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span className={`change-badge-2025 ${totalGain >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+                {totalGain >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                {totalGain >= 0 ? '+' : ''}${Math.abs(totalGain).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="change-amount-2025">
-                {metrics.totalGainPercent >= 0 ? '+' : ''}{metrics.totalGainPercent.toFixed(2)}% Total Return
+                {totalGainPercent >= 0 ? '+' : ''}{totalGainPercent.toFixed(2)}% Total Return
               </span>
             </div>
           </div>
@@ -40,17 +81,17 @@ const Portfolio = ({ portfolio, setSelectedStock }) => {
           </div>
           <div className="stat-item-2025">
             <span className="stat-label-2025">Total Invested</span>
-            <span className="stat-value-2025">${metrics.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="stat-value-2025">${totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="stat-item-2025">
             <span className="stat-label-2025">Market Value</span>
-            <span className="stat-value-2025">${metrics.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="stat-value-2025">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="stat-item-2025">
             <span className="stat-label-2025">Portfolio Health</span>
-            <span className={`stat-value-2025 ${metrics.totalGainPercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
-              {metrics.totalGainPercent >= -10 && metrics.totalGainPercent < 0 ? 'Fair' : 
-               metrics.totalGainPercent >= 0 ? 'Excellent' : 'Needs Attention'}
+            <span className={`stat-value-2025 ${totalGainPercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+              {totalGainPercent >= -10 && totalGainPercent < 0 ? 'Fair' : 
+               totalGainPercent >= 0 ? 'Excellent' : 'Needs Attention'}
             </span>
           </div>
         </div>
@@ -60,25 +101,35 @@ const Portfolio = ({ portfolio, setSelectedStock }) => {
       <div className="card-2025" style={{gridColumn: 'span 4'}}>
         <h3 className="section-title-2025">🏆 Performance Leaders</h3>
         <div className="performance-leaders-2025">
-          {metrics.topPerformer && (
+          {topPerformer && (
             <div className="leader-item-2025">
               <div className="leader-header-2025">
                 <span className="leader-label-2025">🚀 Top Performer</span>
-                <span className="leader-symbol-2025">{metrics.topPerformer.symbol}</span>
+                <span className="leader-symbol-2025">{topPerformer.symbol}</span>
               </div>
               <div className="leader-performance-2025 positive-2025">
-                +{metrics.topPerformer.changePercent.toFixed(2)}%
+                {topPerformer.changePercent >= 0 ? '+' : ''}{topPerformer.changePercent.toFixed(2)}%
               </div>
             </div>
           )}
-          {metrics.worstPerformer && (
+          {worstPerformer && (
             <div className="leader-item-2025">
               <div className="leader-header-2025">
                 <span className="leader-label-2025">📉 Needs Attention</span>
-                <span className="leader-symbol-2025">{metrics.worstPerformer.symbol}</span>
+                <span className="leader-symbol-2025">{worstPerformer.symbol}</span>
               </div>
               <div className="leader-performance-2025 negative-2025">
-                {metrics.worstPerformer.changePercent.toFixed(2)}%
+                {worstPerformer.changePercent.toFixed(2)}%
+              </div>
+            </div>
+          )}
+          {!topPerformer && !worstPerformer && portfolio.holdings?.length === 0 && (
+            <div className="leader-item-2025">
+              <div className="leader-header-2025">
+                <span className="leader-label-2025">📈 No Holdings</span>
+              </div>
+              <div className="leader-performance-2025">
+                Add stocks to see performance
               </div>
             </div>
           )}
@@ -121,7 +172,7 @@ const Portfolio = ({ portfolio, setSelectedStock }) => {
             const cost = shares * avgPrice;
             const gainLoss = value - cost;
             const gainLossPercent = cost > 0 ? ((gainLoss) / cost * 100) : 0;
-            const weight = metrics.totalValue > 0 ? ((value / metrics.totalValue) * 100) : 0;
+            const weight = totalValue > 0 ? ((value / totalValue) * 100) : 0;
             const isPositive = gainLoss >= 0;
 
             return (
@@ -130,7 +181,7 @@ const Portfolio = ({ portfolio, setSelectedStock }) => {
                 className="table-row-2025"
                 onClick={() => setSelectedStock && setSelectedStock({
                   symbol: stock.symbol,
-                  name: stock.name || `${stock.symbol} Inc`,
+                  name: stock.name || stock.symbol,
                   price: currentPrice,
                   change: currentPrice - avgPrice,
                   changePercent: gainLossPercent.toFixed(2),
@@ -140,7 +191,7 @@ const Portfolio = ({ portfolio, setSelectedStock }) => {
                 <div className="table-cell-2025">
                   <div className="symbol-cell-2025">
                     <span className="symbol-text-2025">{stock.symbol}</span>
-                    <span className="company-name-2025">{stock.name || `${stock.symbol} Inc`}</span>
+                    <span className="company-name-2025">{stock.name || stock.symbol}</span>
                   </div>
                 </div>
                 <div className="table-cell-2025">{shares.toLocaleString()}</div>

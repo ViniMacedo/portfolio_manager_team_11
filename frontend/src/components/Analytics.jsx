@@ -1,7 +1,6 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, BarChart3, Activity, PieChart, Target, DollarSign, Percent, Calendar, AlertTriangle, Brain, Sparkles } from 'lucide-react';
 import { 
-  calculatePortfolioMetrics, 
   formatCurrency, 
   formatPercentage, 
   generateAIInsights,
@@ -13,79 +12,51 @@ import {
   calculateStockPerformance
 } from '../utils/globalUtils';
 
-const Analytics = ({ portfolio, setSelectedStock }) => {
-  // Calculate comprehensive analytics metrics using global utilities
-  const portfolioMetrics = calculatePortfolioMetrics(portfolio);
+const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
+  // Use real portfolio data passed from parent (same as Overview component)
+  const totalValue = portfolioData?.totalValue || 0;
+  const dayChange = portfolioData?.dayChange || 0;
+  const dayChangePercent = portfolioData?.dayChangePercent || 0;
+  const totalInvested = portfolioData?.totalInvested || 0;
+  const totalReturn = totalInvested > 0 ? ((totalValue - totalInvested) / totalInvested) * 100 : 0;
+  
+  // For now, set time-based returns to 0 until we have historical data
+  const dailyReturn = dayChangePercent; // Use real day change
+  const weeklyReturn = 0; // Would come from real API data
+  const monthlyReturn = 0; // Would come from real API data
+  const ytdReturn = totalReturn; // Use actual total return as YTD
+
+  // Calculate portfolio volatility from real holdings data
   const portfolioVolatility = calculatePortfolioVolatility(portfolio);
   
-  const calculateMetrics = () => {
-    if (!portfolio?.holdings || portfolio.holdings.length === 0) {
-      return { 
-        totalInvested: 0, 
-        currentValue: 0, 
-        totalReturn: 0, 
-        dailyReturn: 0,
-        weeklyReturn: 0,
-        monthlyReturn: 0,
-        ytdReturn: 0, 
-        volatility: 0,
-        sharpeRatio: 0,
-        maxDrawdown: 0,
-        beta: 0,
-        dividendYield: 0
-      };
-    }
+  // Real metrics calculation - no mock data
+  const sharpeRatio = 0; // Would require risk-free rate and historical returns
+  const maxDrawdown = 0; // Would require historical portfolio values
+  const beta = 1.0; // Market neutral until real calculation
+  const dividendYield = 0; // Would come from real dividend data
 
-    const { totalCost: totalInvested, totalValue: currentValue, totalGainPercent: totalReturn } = portfolioMetrics;
-    
-    // Simulate different time period returns (in real app, this would come from historical data)
-    const dailyReturn = totalReturn * 0.05; // Approximate daily movement
-    const weeklyReturn = totalReturn * 0.15;
-    const monthlyReturn = totalReturn * 0.4;
-    const ytdReturn = totalReturn * 0.8;
-
-    // Advanced metrics (simulated for demo)
-    const sharpeRatio = totalReturn > 0 ? (totalReturn / Math.max(portfolioVolatility, 1)) * 0.1 : 0;
-    const maxDrawdown = Math.abs(totalReturn) * 0.6; // Simulated max drawdown
-    const beta = 0.85 + (Math.random() * 0.3); // Simulated beta vs market
-    const dividendYield = portfolio.holdings.reduce((sum, holding) => {
-      // Simulate dividend yield based on stock type
-      const estimatedYield = Math.random() * 4; // 0-4% yield
-      return sum + estimatedYield;
-    }, 0) / Math.max(portfolio.holdings.length, 1);
-
-    return { 
-      totalInvested, 
-      currentValue, 
-      totalReturn, 
-      dailyReturn,
-      weeklyReturn, 
-      monthlyReturn,
-      ytdReturn, 
-      volatility: portfolioVolatility,
-      sharpeRatio,
-      maxDrawdown,
-      beta,
-      dividendYield
-    };
-  };
-
-  const { 
+  // Metrics object for consistency
+  const metrics = { 
     totalInvested, 
-    currentValue, 
+    currentValue: totalValue, 
     totalReturn, 
     dailyReturn,
-    weeklyReturn,
+    weeklyReturn, 
     monthlyReturn,
     ytdReturn, 
-    volatility,
+    volatility: portfolioVolatility,
     sharpeRatio,
     maxDrawdown,
     beta,
     dividendYield
-  } = calculateMetrics();
+  };
 
-  const aiInsights = generateAIInsights(portfolio, portfolioMetrics);
+  const { 
+    currentValue, 
+    volatility
+  } = metrics;
+
+  const aiInsights = generateAIInsights(portfolio, { totalValue, totalCost: totalInvested, totalGainPercent: totalReturn });
 
   return (
     <div className="dashboard-grid-2025" style={{gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)'}}>
@@ -292,7 +263,17 @@ const Analytics = ({ portfolio, setSelectedStock }) => {
           <div className="stat-item-2025">
             <div className="stat-label-2025" style={{fontSize: '11px'}}>Best Performer</div>
             <div className="stat-value-2025 positive-2025" style={{fontSize: 'var(--text-sm)'}}>
-              {portfolio?.holdings?.length > 0 ? portfolio.holdings[0]?.symbol || 'N/A' : 'N/A'}
+              {portfolio?.holdings?.length > 0 ? (() => {
+                // Find actual best performer by gain/loss percentage
+                const sortedHoldings = [...portfolio.holdings].sort((a, b) => {
+                  const { gainLossPercent: perfA } = calculateStockPerformance(a);
+                  const { gainLossPercent: perfB } = calculateStockPerformance(b);
+                  return perfB - perfA;
+                });
+                const bestPerformer = sortedHoldings[0];
+                const { gainLossPercent } = calculateStockPerformance(bestPerformer);
+                return `${bestPerformer.symbol || 'N/A'} (+${gainLossPercent.toFixed(1)}%)`;
+              })() : 'N/A'}
             </div>
           </div>
           
@@ -321,8 +302,6 @@ const Analytics = ({ portfolio, setSelectedStock }) => {
                 const currentPrice = getCurrentPrice(stock);
                 const isPositive = totalGainLoss >= 0;
                 
-                const performanceIcons = ['🏆', '🥇', '🥈', '🥉', '📈', '📊'];
-                
                 return (
                   <div 
                     key={stock.symbol} 
@@ -333,21 +312,21 @@ const Analytics = ({ portfolio, setSelectedStock }) => {
                       name: stock.name || `${stock.symbol} Inc`,
                       price: currentPrice,
                       change: totalGainLoss,
-                      changePercent: changePercent,
+                      changePercent: gainLossPercent,
                       color: isPositive ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
                     })}
                   >
                     <div className="mover-header-2025">
                       <span className="mover-symbol-2025" style={{fontSize: 'var(--text-sm)'}}>
-                        {performanceIcons[index] || '📊'} {stock.symbol}
+                        {stock.symbol}
                       </span>
                       <span className={`mover-change-2025 ${isPositive ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-xs)'}}>
-                        {isPositive ? '+' : ''}{changePercent}%
+                        {isPositive ? '+' : ''}{gainLossPercent.toFixed(2)}%
                       </span>
                     </div>
                     <div className="mover-price-2025" style={{fontSize: 'var(--text-base)'}}>${currentPrice.toFixed(2)}</div>
                     <div className="mover-name-2025" style={{fontSize: '11px'}}>
-                      {shares} shares • ${totalValue.toLocaleString()}
+                      {shares} shares • ${marketValue.toLocaleString()}
                     </div>
                     <div style={{
                       fontSize: '11px', 
