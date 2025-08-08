@@ -10,8 +10,8 @@ import {
   fetchStockBySymbol 
 } from "../services/api";
 
-const IDEAL_CARD_W = 320;
-const CARD_H = 280;
+const IDEAL_CARD_W = 280;
+const CARD_H = 240;
 const GAP = 24;
 const GRID_MAX_HEIGHT = 600;
 
@@ -353,6 +353,13 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
                               <div 
                                 className="mover-card-2025" 
                                 onClick={() => handleCardClick(item)}
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleCardClick(item);
+                                  }
+                                }}
                                 style={{ 
                                   opacity: isSearching ? 0.8 : 1,
                                   transition: 'opacity 0.2s ease'
@@ -363,20 +370,36 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
                                   {details ? (
                                     <span className={`mover-change-2025 ${details.change >= 0 ? 'positive-2025' : 'negative-2025'}`}>
                                       {details.changePercent ? 
-                                        `${details.changePercent.toFixed(2)}%` :
-                                        details.price > 0 ? `${((details.change / details.price) * 100).toFixed(2)}%` : '--'
+                                        `${details.changePercent >= 0 ? '+' : ''}${details.changePercent.toFixed(2)}%` :
+                                        details.price > 0 ? `${details.change >= 0 ? '+' : ''}${((details.change / details.price) * 100).toFixed(2)}%` : '--'
                                       }
                                     </span>
                                   ) : isError ? (
-                                    <span className="mover-change-2025">ERR</span>
+                                    <span className="mover-change-2025" style={{ 
+                                      backgroundColor: 'rgba(255,255,255,0.1)', 
+                                      color: 'var(--text-dim)',
+                                      fontSize: '10px',
+                                      padding: '2px 6px',
+                                      borderRadius: '8px'
+                                    }}>ERR</span>
                                   ) : (
-                                    <span className="mover-change-2025">--</span>
+                                    <div className="mover-loading-skeleton" style={{ width: '40px', height: '16px' }}></div>
                                   )}
                                 </div>
                                 <div className="mover-price-2025">
-                                  {details ? `$${details.price?.toFixed(2) || '0.00'}` : (isLoading ? 'Loading…' : '—')}
+                                  {details ? 
+                                    `$${details.price?.toFixed(2) || '0.00'}` : 
+                                    isLoading ? 
+                                      <div className="mover-loading-skeleton" style={{ width: '80px', height: '26px' }}></div> : 
+                                      '—'
+                                  }
                                 </div>
-                                <div className="mover-name-2025">{item.name}</div>
+                                <div className="mover-name-2025">
+                                  {isLoading && !details ? 
+                                    <div className="mover-loading-skeleton" style={{ width: '100%', height: '13px', marginBottom: '4px' }}></div> :
+                                    item.name
+                                  }
+                                </div>
                               </div>
                             </div>
                           </div>
