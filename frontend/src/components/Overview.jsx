@@ -1,322 +1,489 @@
-import React from 'react';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, ArrowUpRight, Activity, Zap, Eye, Plus, FileText, Download, Share, Target, Calendar, Bookmark } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, Eye, Download, Share } from 'lucide-react';
 import { exportPortfolioToCSV, sharePortfolioLink } from '../utils/exportUtils';
+import { fetchStockBySymbol } from '../services/api';
+import { 
+  formatCurrency, 
+  formatPercentage, 
+  safeNumber, 
+  calculatePortfolioMetrics,
+  isMarketOpen,
+  getCurrentTimestamp 
+} from '../utils/globalUtils';
 
+const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
+  const [marketMovers, setMarketMovers] = useState([]);
+  const [topPerformers, setTopPerformers] = useState([]);
+  const [portfolioInsights, setPortfolioInsights] = useState({});
+  const [chartData, setChartData] = useState([]);
+  const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
-const Overview = ({ portfolioData, portfolio, watchlist, performanceData, handleTradeStock, setActiveTab, setSelectedStock }) => {
-  // Calculate real portfolio value from holdings
-  const realTotalValue = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.current_price), 0) || 0;
-  const realTotalInvested = portfolio.holdings?.reduce((sum, stock) => sum + (stock.shares * stock.avg_price), 0) || 0;
-  const realTotalGain = realTotalValue - realTotalInvested;
-  const realTotalGainPercent = realTotalInvested > 0 ? ((realTotalGain / realTotalInvested) * 100).toFixed(1) : 0;
+  // Calculate portfolio metrics
+  const totalValue = safeNumber(portfolioData.totalValue, 0);
+  const dayChange = safeNumber(portfolioData.dayChange, 0);
+  const dayChangePercent = safeNumber(portfolioData.dayChangePercent, 0);
+  const totalHoldings = portfolio?.holdings?.length || 0;
+
+  // Fetch market movers data on component mount
+  useEffect(() => {
+    const fetchMarketMovers = async () => {
+      const popularSymbols = ['PLTR', 'AMD', 'COIN', 'RBLX', 'META']; // for poc, should be dynamic in real app
+      const moversData = [];
+
+      for (const symbol of popularSymbols) {
+        try {
+          const stockData = await fetchStockBySymbol(symbol);
+          moversData.push({
+            symbol: symbol,
+            name: stockData.name || `${symbol} Inc`,
+            price: stockData.price || 0,
+            change: stockData.change || 0,
+            changePercent: stockData.changePercent || 0
+          });
+        } catch (error) {
+          console.error(`Failed to fetch market mover data for ${symbol}:`, error);
+        }
+      }
+      setMarketMovers(moversData);
+    };
+
+    fetchMarketMovers();
+  }, []);
+
+  // Calculate portfolio insights
+  useEffect(() => {
+    if (!portfolio.holdings || portfolio.holdings.length === 0) return;
+
+    const calculateInsights = async () => {
+      let bestPerformer = null;
+      let worstPerformer = null;
+      let maxGain = -Infinity;
+      let maxLoss = Infinity;
+
+      // Get current prices for all holdings and calculate performance
+      for (const holding of portfolio.holdings) {
+        try {
+          const currentPrice = holding.current_price || 0;
+          const avgPrice = safeNumber(holding.avg_price, 0);
+          const performancePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
+          const symbol = holding.product_symbol || holding.symbol || 'Unknown';
+
+          if (performancePercent > maxGain) {
+            maxGain = performancePercent;
+            bestPerformer = { ...holding, performancePercent, product_symbol: symbol };
+          }
+
+          if (performancePercent < maxLoss) {
+            maxLoss = performancePercent;
+            worstPerformer = { ...holding, performancePercent, product_symbol: symbol };
+          }
+        } catch (error) {
+          console.error(`Error calculating performance for ${holding.product_symbol || 'unknown holding'}:`, error);
+        }
+      }
+
+      setPortfolioInsights({
+        bestPerformer,
+        worstPerformer,
+        diversificationScore: Math.min(10, totalHoldings * 1.2), // Simplified diversification calculation
+        riskScore: totalHoldings > 5 ? 'Low' : totalHoldings > 2 ? 'Medium' : 'High'
+      });
+    };
+
+    calculateInsights();
+  }, [portfolio.holdings, totalHoldings]);
+
+  // Generate chart data based on portfolio performance and holdings
+  useEffect(() => {
+    // Create more realistic chart data based on actual portfolio data
+    const generateChartData = () => {
+      const baseValue = Math.max(totalValue * 0.8, 10000); // Start from 80% of current value
+      const volatility = Math.min(Math.max(totalHoldings * 0.02, 0.05), 0.15); // Volatility based on diversification
+      const trend = dayChangePercent > 0 ? 1.02 : 0.98; // Slight upward/downward trend
+      
+      const data = [];
+      let currentValue = baseValue;
+      
+      // Generate 15 data points representing the last 15 days
+      for (let i = 0; i < 15; i++) {
+        // Add some realistic volatility
+        const randomChange = (Math.random() - 0.5) * volatility;
+        const trendAdjustment = Math.pow(trend, i * 0.1);
+        
+        currentValue = currentValue * (1 + randomChange) * trendAdjustment;
+        
+        // Calculate height percentage for chart display (35-98%)
+        const heightPercent = Math.min(98, Math.max(35, (currentValue / (totalValue * 1.2)) * 100));
+        
+        // Create date for tooltip (15 days ago to today)
+        const date = new Date();
+        date.setDate(date.getDate() - (14 - i));
+        
+        data.push({
+          value: currentValue,
+          height: heightPercent,
+          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          change: i > 0 ? ((currentValue - data[i - 1]?.value) / data[i - 1]?.value * 100) : 0,
+          dayIndex: i
+        });
+      }
+      
+      return data;
+    };
+
+    setChartData(generateChartData());
+  }, [dayChangePercent, totalValue, totalHoldings]);
 
   return (
-    <div className="flex flex-col gap-3 h-full overflow-hidden">
-      {/* Portfolio Value - Compact Header */}
-      <div className="glass-gradient-header rounded-xl p-3 lg:p-4 flex-shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-3xl"></div>
-        <div className="absolute top-0 right-0 w-16 h-16 lg:w-24 lg:h-24 bg-gradient-to-bl from-cyan-400/30 to-transparent rounded-full blur-2xl"></div>
-        <div className="absolute bottom-0 left-0 w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-tr from-pink-400/30 to-transparent rounded-full blur-xl"></div>
-
-        <div className="relative z-10">
-          <div className="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center space-x-3 sm:space-x-4 lg:space-x-5 min-w-0 flex-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center transform hover:scale-110 transition-transform duration-200 shadow-lg flex-shrink-0">
-                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-white/80 text-sm sm:text-base lg:text-lg">Total Portfolio Value</h2>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white truncate">${realTotalValue.toLocaleString()}</p>
-              </div>
+    <div className="dashboard-grid-2025">
+      {/* Top Row - Portfolio Value (Large Card) and AI Insights */}
+      <div className="card-2025 portfolio-value-2025" style={{gridColumn: 'span 8'}}>
+        <div className="value-header-2025">
+          <div className="value-main-2025">
+            <h3 className="section-title-2025">Portfolio Value</h3>
+            <div className="value-amount-2025">{formatCurrency(totalValue)}</div>
+            <div className="value-change-2025">
+              <span className={`change-badge-2025 ${dayChangePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+                {dayChangePercent >= 0 ? '↑' : '↓'} {formatPercentage(Math.abs(dayChangePercent))}
+              </span>
+              <span className="change-amount-2025">
+                {dayChangePercent >= 0 ? '+' : ''}{formatCurrency(dayChange)} Today
+              </span>
             </div>
-            
-            <div className="flex items-center justify-between lg:justify-end lg:space-x-4 xl:space-x-6 space-x-3 sm:space-x-4 flex-shrink-0">
-              <div className="text-center min-w-0">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
-                  <TrendingUp className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-400" />
-                </div>
-                <div className="text-sm sm:text-base lg:text-lg font-bold text-green-400">{portfolioData.dayChangePercent}%</div>
-                <div className="text-white/80 text-xs sm:text-xs lg:text-sm">Today</div>
-                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">${portfolioData.dayChange.toLocaleString()}</div>
+          </div>
+          <div className={`live-indicator-2025 ${!isMarketOpen() ? 'closed' : ''}`}>
+            <div className={`status-dot-2025 ${isMarketOpen() ? 'live' : 'closed'}`}></div>
+            <span>{isMarketOpen() ? 'LIVE' : 'CLOSED'}</span>
+          </div>
+        </div>
+        
+        {/* Mini Chart */}
+        <div className="mini-chart-2025" style={{ position: 'relative' }}>
+          {chartData.map((dataPoint, index) => (
+            <div 
+              key={index}
+              className="chart-bar-2025" 
+              style={{ 
+                height: `${dataPoint.height}%`,
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={() => setHoveredBarIndex(index)}
+              onMouseLeave={() => setHoveredBarIndex(null)}
+            />
+          ))}
+          
+          {/* Single tooltip container positioned relative to entire chart */}
+          {hoveredBarIndex !== null && (
+            <div 
+              className="chart-tooltip"
+              style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: `${(hoveredBarIndex / (chartData.length - 1)) * 100}%`,
+                transform: hoveredBarIndex < 3 ? 'translateX(0%)' : 
+                          hoveredBarIndex > chartData.length - 4 ? 'translateX(-100%)' : 
+                          'translateX(-50%)',
+                background: 'rgba(0, 0, 0, 0.9)',
+                color: 'white',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                whiteSpace: 'nowrap',
+                zIndex: 10,
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                marginBottom: '5px',
+                pointerEvents: 'none'
+              }}
+            >
+              <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
+                {chartData[hoveredBarIndex]?.date}
               </div>
-              
-              <div className="text-center min-w-0">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
-                  <ArrowUpRight className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-purple-400" />
-                </div>
-                <div className="text-sm sm:text-base lg:text-lg font-bold text-purple-400">{realTotalGainPercent}%</div>
-                <div className="text-white/80 text-xs sm:text-xs lg:text-sm">All Time</div>
-                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">{realTotalGain > 0 ? ("$" + realTotalGain.toLocaleString()) : ("-$" + (realTotalGain * -1).toLocaleString())}</div>
+              <div style={{ color: '#10b981' }}>
+                Value: {formatCurrency(chartData[hoveredBarIndex]?.value)}
               </div>
-              
-              <div className="text-center min-w-0">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center mx-auto mb-1 border border-white/30 hover:scale-110 transition-transform duration-200">
-                  <BarChart3 className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-cyan-400" />
-                </div>
-                <div className="text-sm sm:text-base lg:text-lg font-bold text-cyan-400">{portfolio.holdings?.length || 0}</div>
-                <div className="text-white/80 text-xs sm:text-xs lg:text-sm">Positions</div>
-                <div className="text-white text-xs sm:text-sm lg:text-base font-bold">Active</div>
+              <div style={{ 
+                color: chartData[hoveredBarIndex]?.change >= 0 ? '#10b981' : '#ef4444',
+                fontSize: '11px'
+              }}>
+                {chartData[hoveredBarIndex]?.change >= 0 ? '+' : ''}{chartData[hoveredBarIndex]?.change?.toFixed(2)}%
               </div>
+              {/* Tooltip arrow */}
+              <div 
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: hoveredBarIndex < 3 ? '20px' : 
+                        hoveredBarIndex > chartData.length - 4 ? 'calc(100% - 20px)' : 
+                        '50%',
+                  transform: hoveredBarIndex < 3 ? 'translateX(0%)' : 
+                            hoveredBarIndex > chartData.length - 4 ? 'translateX(-100%)' : 
+                            'translateX(-50%)',
+                  width: 0,
+                  height: 0,
+                  borderLeft: '4px solid transparent',
+                  borderRight: '4px solid transparent',
+                  borderTop: '4px solid rgba(0, 0, 0, 0.9)'
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Metrics */}
+        <div className="metrics-grid-2025">
+          <div className="metric-card-2025">
+            <div className="metric-label-2025">24h Change</div>
+            <div className={`metric-value-2025 ${dayChangePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+              {dayChangePercent >= 0 ? '+' : ''}{formatCurrency(dayChange)}
+            </div>
+          </div>
+          <div className="metric-card-2025">
+            <div className="metric-label-2025">Best Performer</div>
+            <div className="metric-value-2025 text-gradient-blue">
+              {portfolioInsights.bestPerformer ? 
+                `${portfolioInsights.bestPerformer.product_symbol} ${formatPercentage(portfolioInsights.bestPerformer.performancePercent)}` : 
+                'Loading...'
+              }
+            </div>
+          </div>
+          <div className="metric-card-2025">
+            <div className="metric-label-2025">Risk Score</div>
+            <div className="metric-value-2025 text-gradient-purple">
+              {portfolioInsights.riskScore || 'Medium'} {portfolioInsights.diversificationScore?.toFixed(1) || '5.0'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
-        {/* Holdings Preview - Financial Data Priority */}
-        <div className="col-span-12 md:col-span-4 lg:col-span-3 glass-container flex flex-col min-h-0 max-h-full">
-          <div className="glass-gradient-section p-4 rounded-t-2xl flex-shrink-0">
-            <h3 className="text-sm lg:text-lg font-bold text-gray-900 flex items-center justify-between">
-              <div className="flex items-center">
-                <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-purple-600" />
-                <span>Holdings</span>
-              </div>
-              <div className="text-xs lg:text-sm text-purple-600 font-semibold">${realTotalValue.toLocaleString()}</div>
-            </h3>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-            {portfolio.holdings?.map((stock) => {
-              const value = stock.shares * stock.current_price;
-              const change = stock.current_price - stock.avg_price;
-              const changePercent = ((change) / stock.avg_price * 100).toFixed(2);
-              const colorClass = change >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600';
-              
-              return (
-                <div 
-                  key={stock.symbol} 
-                  className="glass-holding-card p-3 cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                  onClick={() => setSelectedStock && setSelectedStock({
-                    symbol: stock.symbol,
-                    name: stock.name || `${stock.symbol} Inc`,
-                    price: stock.current_price,
-                    change: change,
-                    changePercent: changePercent,
-                    sector: stock.sector || 'Technology',
-                    marketCap: stock.marketCap || (Math.random() * 2000000000000 + 100000000000),
-                    volume: stock.volume || (Math.random() * 80000000 + 5000000),
-                    color: colorClass
-                  })}
-
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 bg-gradient-to-r ${colorClass} rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0`}>
-                      {stock.symbol[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-gray-900 text-sm mb-1 truncate">{stock.symbol}</div>
-                      <div className="text-gray-600 text-xs truncate">{stock.shares} shares @ ${stock.avg_price}</div>
-                    </div>
-                    <div className="text-right flex-shrink-0 min-w-[80px]">
-                      <div className="font-bold text-gray-900 text-sm mb-1">${value.toLocaleString()}</div>
-                      <div className={`text-xs font-semibold ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {change >= 0 ? '+' : ''}{changePercent}%
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            }) || []}
+      {/* AI Insights - Right side */}
+      <div className="card-2025 ai-insights-2025" style={{gridColumn: 'span 4'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>🤖 AI Insights</h3>
+        
+        <div className="insight-card-2025 success">
+          <div className="insight-title-2025 positive-2025">Portfolio Health</div>
+          <div className="insight-text-2025">
+            {totalHoldings > 3 ? 
+              `Well diversified with ${totalHoldings} holdings. Good risk management.` :
+              `Consider diversifying beyond ${totalHoldings} holdings for better risk distribution.`
+            }
           </div>
         </div>
 
-        {/* Enhanced Performance Section with Chart */}
-        <div className="col-span-12 md:col-span-8 lg:col-span-6 flex flex-col gap-3 min-h-0">
-          {/* Performance Metrics & Chart */}
-          <div className="bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 rounded-2xl p-3 lg:p-4 text-white shadow-xl relative overflow-hidden flex-1 min-h-0">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent backdrop-blur-3xl"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
-            <div className="relative z-10 h-full flex flex-col min-h-0">
-              <h3 className="text-lg lg:text-xl font-bold mb-3 flex items-center flex-shrink-0">
-                <Activity className="h-5 w-5 lg:h-6 lg:w-6 mr-2 lg:mr-3" />
-                Performance Analytics
-              </h3>
-              
-              {/* Metrics Row - Using Real Data */}
-              <div className="flex justify-around gap-2 lg:gap-4 mb-3 lg:mb-4 flex-shrink-0">
-                <div className="text-center flex-1 min-w-0">
-                  <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <TrendingUp className="h-4 w-4 lg:h-5 lg:w-5" />
-                  </div>
-                  <div className="text-lg lg:text-xl font-bold mb-1">{realTotalGainPercent}%</div>
-                  <div className="text-xs lg:text-sm opacity-90">Total Return</div>
-                </div>
-                <div className="text-center flex-1 min-w-0">
-                  <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <Activity className="h-4 w-4 lg:h-5 lg:w-5" />
-                  </div>
-                  <div className="text-lg lg:text-xl font-bold mb-1">{portfolioData.dayChangePercent.toFixed(2)}%</div>
-                  <div className="text-xs lg:text-sm opacity-90">Today's Return</div>
-                </div>
-                <div className="text-center flex-1 min-w-0">
-                  <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-lg lg:rounded-xl flex items-center justify-center mx-auto mb-1 lg:mb-2 border border-white/30 hover:scale-110 transition-transform duration-200 cursor-pointer">
-                    <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5" />
-                  </div>
-                  <div className="text-lg lg:text-xl font-bold mb-1">${(realTotalValue / Math.max(portfolio.holdings?.length || 1, 1)).toLocaleString()}</div>
-                  <div className="text-xs lg:text-sm opacity-90">Avg Position</div>
-                </div>
-              </div>
-
-              {/* Performance Chart - CSS Based */}
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 lg:p-4 border border-white/20 flex-1 min-h-0 flex flex-col">
-                <div className="flex items-center justify-between mb-2 lg:mb-3 flex-shrink-0">
-                  <span className="text-xs lg:text-sm font-semibold">7-Month Trend</span>
-                  <span className="text-xs opacity-75">Portfolio Growth</span>
-                </div>
-                <div className="flex-1 flex items-end justify-between space-x-1 lg:space-x-2 mb-2 lg:mb-3 min-h-0">
-                  {performanceData.map((item, index) => (
-                    <div key={item.date} className="flex flex-col items-center space-y-1 flex-1 min-w-0">
-                      <div 
-                        className="w-full bg-white/30 rounded-t-sm transition-all duration-500 hover:bg-white/50 cursor-pointer"
-                        style={{ 
-                          height: `${Math.max((item.value - 95000) / 1000, 8)}px`,
-                          minHeight: '6px',
-                          maxHeight: '60px'
-                        }}
-                      ></div>
-                      <span className="text-xs opacity-75 truncate">{item.date}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between items-center text-xs opacity-75 flex-shrink-0">
-                  <span className="truncate">${Math.min(...performanceData.map(d => d.value)).toLocaleString()}</span>
-                  <span className="font-semibold text-green-300 px-2 truncate">{portfolioData.totalGainPercent}% Growth</span>
-                  <span className="truncate">${Math.max(...performanceData.map(d => d.value)).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
+        <div className="insight-card-2025 warning">
+          <div className="insight-title-2025" style={{color: 'var(--color-neon-yellow)'}}>
+            {dayChangePercent < -2 ? 'Risk Alert' : 'Market Trend'}
           </div>
-
-          {/* Quick Links */}
-          <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-3 border border-white/30 shadow-xl flex-shrink-0">
-            <h4 className="text-sm lg:text-lg font-bold text-gray-900 mb-2 flex items-center">
-              <Zap className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-indigo-600" />
-              Quick Actions
-            </h4>
-            <div className="grid grid-cols-6 gap-2">
-                            <button className="bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-indigo-200 group">
-                <FileText className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-indigo-600 group-hover:scale-110 transition-transform duration-200" />
-                <div className="text-xs font-semibold text-gray-700">Reports</div>
-              </button>
-
-              <button 
-                onClick={() => exportPortfolioToCSV(portfolio, portfolioData)}
-                className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl p-2 text-center transition-all duration-200 hover:scale-105 active:scale-95 border border-green-200 group"
-              >
-                <Download className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-green-600 group-hover:scale-110 transition-transform duration-200" />
-                <div className="text-xs font-semibold text-gray-700">Export</div>
-              </button>
-
-              <button 
-                onClick={() => sharePortfolioLink(portfolio, portfolioData)}
-                className="glass-button text-center group"
-              >
-                <Share className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
-                <div className="text-xs font-semibold text-gray-700">Share</div>
-              </button>
-
-              <button className="glass-button text-center">
-                <Target className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
-                <div className="text-xs font-semibold text-gray-700">Goals</div>
-              </button>
-
-              <button className="glass-button text-center">
-                <Calendar className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
-                <div className="text-xs font-semibold text-gray-700">Calendar</div>
-              </button>
-
-              <button className="glass-button text-center">
-                <Bookmark className="h-3 w-3 lg:h-4 lg:w-4 mx-auto mb-1 text-cyan-600 group-hover:scale-110 transition-transform duration-200" />
-                <div className="text-xs font-semibold text-gray-700">Saved</div>
-              </button>
-            </div>
+          <div className="insight-text-2025">
+            {dayChangePercent < -2 ? 
+              'Portfolio down today. Consider reviewing positions.' :
+              'Market conditions favorable. Good time for strategic moves.'
+            }
           </div>
         </div>
 
-        {/* Enhanced Watchlist & Actions - Premium UX */}
-        <div className="col-span-12 md:col-span-12 lg:col-span-3 flex flex-col gap-3 min-h-0 max-h-full">
-          {/* Premium Watchlist - Glassmorphism Design */}
-          <div className="flex-1 glass-container min-h-0 max-h-full">
-            <div className="glass-panel h-full flex flex-col min-h-0">
-              <div className="p-3 border-b border-white/20 glass-gradient-section rounded-t-xl flex-shrink-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-sm lg:text-lg font-bold text-gray-900 flex items-center">
-                    <Eye className="h-4 w-4 lg:h-5 lg:w-5 mr-2 text-purple-600" />
-                    Watchlist
-                  </h3>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                </div>
-                <p className="text-xs text-purple-700 font-medium">Market opportunities</p>
-              </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-                {watchlist.map((stock) => (
-                  <div 
-                    key={stock.symbol} 
-                    className="glass-watchlist-item cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                    onClick={() => setSelectedStock && setSelectedStock(stock)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 min-w-0 flex-1">
-                        <div className={`w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-r ${stock.color} rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg group-hover:shadow-xl transition-shadow duration-200`}>
-                          {stock.symbol[0]}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-gray-900 text-xs lg:text-sm">{stock.symbol}</div>
-                          <div className="text-gray-600 text-xs truncate">{stock.name.split(' ')[0]}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-gray-900 text-xs lg:text-sm">${stock.price}</div>
-                        <div className={`text-xs font-semibold flex items-center justify-end ${stock.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {stock.change >= 0 ? <TrendingUp className="h-2 w-2 lg:h-3 lg:w-3 mr-1" /> : <TrendingDown className="h-2 w-2 lg:h-3 lg:w-3 mr-1" />}
-                          {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <button className="w-full glass-button-secondary text-xs lg:text-sm">
-                  <Plus className="h-3 w-3 lg:h-4 lg:w-4 inline mr-2" />
-                  Add Symbol
-                </button>
-              </div>
-            </div>
+        <div className="insight-card-2025 info">
+          <div className="insight-title-2025" style={{color: 'var(--color-neon-purple)'}}>Performance</div>
+          <div className="insight-text-2025">
+            {portfolioInsights.bestPerformer ? 
+              `${portfolioInsights.bestPerformer.product_symbol} leading gains at ${formatPercentage(portfolioInsights.bestPerformer.performancePercent)}.` :
+              'Analyzing portfolio performance...'
+            }
           </div>
+        </div>
 
-          {/* Trading Actions */}
-          <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl p-3 text-white shadow-xl relative overflow-hidden flex-shrink-0">
-            <div className="absolute top-0 right-0 w-12 h-12 bg-white/20 rounded-full blur-xl"></div>
-            <div className="relative z-10">
-              <h3 className="text-xs lg:text-sm font-bold mb-2 flex items-center">
-                <Zap className="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
-                Trading
-              </h3>
-              <div className="space-y-2">
-                <button 
-                  onClick={() => {
-                    setActiveTab('browse');
-                  }}
-                  className="w-full bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-xl p-2 text-center transition-all duration-200 border border-white/30 hover:scale-105 active:scale-95 group"
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Plus className="h-3 w-3 lg:h-4 lg:w-4 group-hover:rotate-90 transition-transform duration-200" />
-                    <span className="font-semibold text-xs">Buy Order</span>
-                  </div>
-                </button>
-                <button 
-                  onClick={() => {
-                    setActiveTab('performance');
-                  }}
-                  className="w-full bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-xl p-2 text-center transition-all duration-200 border border-white/30 hover:scale-105 active:scale-95 group"
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Activity className="h-3 w-3 lg:h-4 lg:w-4 group-hover:scale-110 transition-transform duration-200" />
-                    <span className="font-semibold text-xs">Analysis</span>
-                  </div>
-                </button>
-              </div>
-            </div>
+        <div className="insight-card-2025 info">
+          <div className="insight-title-2025" style={{color: 'var(--color-neon-blue)'}}>Market Status</div>
+          <div className="insight-text-2025">
+            Market is currently {isMarketOpen() ? 'open' : 'closed'}. Last updated: {getCurrentTimestamp()}.
           </div>
+        </div>
+      </div>
+
+      {/* Second Row - Top Holdings */}
+      <div className="card-2025 holdings-card-2025" style={{gridColumn: 'span 4'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📊 Top Holdings</h3>
+
+        {portfolio.holdings && portfolio.holdings.length > 0 ? (
+          portfolio.holdings.slice(0, 3).map((holding, index) => {
+            const currentPrice = safeNumber(holding.current_price, 0);
+            const avgPrice = safeNumber(holding.avg_price, 0);
+            const quantity = safeNumber(holding.qty, 0);
+            const value = currentPrice * quantity;
+            const performancePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
+            const symbol = holding.product_symbol || holding.symbol || 'N/A';
+            
+            return (
+              <div key={symbol} className="holding-item-2025">
+                <div className="holding-left-2025">
+                  <div className="holding-icon-2025" style={{
+                    background: index === 0 ? 'linear-gradient(135deg, #10b981, #059669)' :
+                              index === 1 ? 'linear-gradient(135deg, #3b82f6, #2563eb)' :
+                              'linear-gradient(135deg, #8b5cf6, #7c3aed)'
+                  }}>
+                    {symbol.charAt(0)}
+                  </div>
+                  <div className="holding-info-2025">
+                    <h4>{symbol}</h4>
+                    <p>{quantity.toLocaleString()} shares</p>
+                  </div>
+                </div>
+                <div className="holding-value-2025">
+                  <div className="holding-price-2025">{formatCurrency(value)}</div>
+                  <div className={`holding-change-2025 ${performancePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+                    {formatPercentage(performancePercent)}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-8" style={{color: 'rgba(255, 255, 255, 0.6)'}}>
+            <p>No holdings found</p>
+            <button 
+              onClick={() => setActiveTab('browse')}
+              className="action-button-2025 mt-4 px-4 py-2"
+            >
+              Start Trading
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="card-2025 quick-actions-2025" style={{gridColumn: 'span 4'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>⚡ Quick Actions</h3>
+        
+        <div className="actions-grid-2025">
+          <div className="action-btn-2025" onClick={() => setActiveTab('browse')}>
+            <div className="action-icon-2025" style={{background: 'linear-gradient(135deg, #10b981, #059669)'}}>
+              <Eye size={20} />
+            </div>
+            <div className="action-label-2025">Browse Stocks</div>
+          </div>
+          <div className="action-btn-2025" onClick={() => exportPortfolioToCSV(portfolio, portfolioData)}>
+            <div className="action-icon-2025" style={{background: 'linear-gradient(135deg, #3b82f6, #2563eb)'}}>
+              <Download size={20} />
+            </div>
+            <div className="action-label-2025">Export</div>
+          </div>
+          <div className="action-btn-2025" onClick={() => sharePortfolioLink(portfolio, portfolioData)}>
+            <div className="action-icon-2025" style={{background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)'}}>
+              <Share size={20} />
+            </div>
+            <div className="action-label-2025">Share</div>
+          </div>
+          <div className="action-btn-2025" onClick={() => setActiveTab('ai-insights')}>
+            <div className="action-icon-2025" style={{background: 'linear-gradient(135deg, #f59e0b, #d97706)'}}>
+              <Zap size={20} />
+            </div>
+            <div className="action-label-2025">AI Insights</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Performance */}
+      <div className="card-2025 performance-card-2025" style={{gridColumn: 'span 4'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📈 Performance</h3>
+        
+        <div className="performance-item-2025">
+          <div className="performance-header-2025">
+            <span className="performance-label-2025">Daily Return</span>
+            <span className={`performance-value-2025 ${dayChangePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+              {formatPercentage(dayChangePercent)}
+            </span>
+          </div>
+          <div className="performance-bar-2025">
+            <div className="performance-fill-2025" style={{
+              width: `${Math.min(95, Math.max(5, 50 + dayChangePercent * 2))}%`, 
+              background: dayChangePercent >= 0 ? 
+                'linear-gradient(90deg, #10b981, #059669)' : 
+                'linear-gradient(90deg, #ef4444, #dc2626)'
+            }}></div>
+          </div>
+        </div>
+
+        <div className="performance-item-2025">
+          <div className="performance-header-2025">
+            <span className="performance-label-2025">Portfolio Value</span>
+            <span className="performance-value-2025" style={{color: 'var(--color-neon-blue)'}}>
+              {formatCurrency(totalValue)}
+            </span>
+          </div>
+          <div className="performance-bar-2025">
+            <div className="performance-fill-2025" style={{
+              width: `${Math.min(95, Math.max(10, (totalValue / 200000) * 100))}%`, 
+              background: 'linear-gradient(90deg, #3b82f6, #2563eb)'
+            }}></div>
+          </div>
+        </div>
+
+        <div className="performance-item-2025">
+          <div className="performance-header-2025">
+            <span className="performance-label-2025">Holdings Count</span>
+            <span className="performance-value-2025" style={{color: 'var(--color-neon-purple)'}}>
+              {totalHoldings} stocks
+            </span>
+          </div>
+          <div className="performance-bar-2025">
+            <div className="performance-fill-2025" style={{
+              width: `${Math.min(95, Math.max(10, (totalHoldings / 10) * 100))}%`, 
+              background: 'linear-gradient(90deg, #8b5cf6, #7c3aed)'
+            }}></div>
+          </div>
+        </div>
+
+        <div className="performance-item-2025">
+          <div className="performance-header-2025">
+            <span className="performance-label-2025">Risk Level</span>
+            <span className="performance-value-2025" style={{color: 'var(--color-neon-yellow)'}}>
+              {portfolioInsights.riskScore || 'Medium'}
+            </span>
+          </div>
+          <div className="performance-bar-2025">
+            <div className="performance-fill-2025" style={{
+              width: `${
+                portfolioInsights.riskScore === 'Low' ? '85%' : 
+                portfolioInsights.riskScore === 'Medium' ? '65%' : '40%'
+              }`, 
+              background: 'linear-gradient(90deg, #f59e0b, #d97706)'
+            }}></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Market Movers - Full Width */}
+      <div className="card-2025 market-movers-2025" style={{gridColumn: 'span 12'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>🚀 Market Movers</h3>
+        
+        <div className="movers-grid-2025">
+          {marketMovers.length > 0 ? (
+            marketMovers.map((stock) => (
+              <div key={stock.symbol} className="mover-card-2025">
+                <div className="mover-header-2025">
+                  <span className="mover-symbol-2025">{stock.symbol}</span>
+                  <span className={`mover-change-2025 ${stock.changePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+                    {formatPercentage(stock.changePercent)}
+                  </span>
+                </div>
+                <div className="mover-price-2025">{formatCurrency(stock.price)}</div>
+                <div className="mover-name-2025">{stock.name}</div>
+              </div>
+            ))
+          ) : (
+            // Loading state with placeholders
+            ['PLTR', 'AMD', 'COIN', 'RBLX', 'META'].map((symbol) => (
+              <div key={symbol} className="mover-card-2025">
+                <div className="mover-header-2025">
+                  <span className="mover-symbol-2025">{symbol}</span>
+                  <span className="mover-change-2025">Loading...</span>
+                </div>
+                <div className="mover-price-2025">--</div>
+                <div className="mover-name-2025">Loading...</div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

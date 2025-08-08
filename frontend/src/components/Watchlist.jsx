@@ -1,115 +1,131 @@
 import React from 'react';
 import { Eye, Plus, TrendingUp, TrendingDown, Star } from 'lucide-react';
 
-const Watchlist = ({ watchlist, setSelectedStock }) => {
+const Watchlist = ({ watchlist, setSelectedStock, setActiveTab }) => {
   return (
-    <div className="flex flex-col gap-6 h-full">
-      {/* Header with glass style */}
-      <div className="glass-search-header">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-pink-400/10 backdrop-blur-3xl"></div>
-        <div className="absolute top-0 left-0 w-full h-full bg-white/5 backdrop-blur-sm"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-white text-3xl font-bold tracking-tight drop-shadow-lg flex items-center">
-                <Eye className="h-8 w-8 mr-3" />
-                Watchlist
-              </h2>
-              <p className="text-white/90 text-lg font-medium">Stocks you're tracking</p>
+    <div className="dashboard-grid-2025">
+      {/* Watchlist Header */}
+      <div className="card-2025 portfolio-value-2025" style={{gridColumn: 'span 8'}}>
+        <div className="value-header-2025">
+          <div className="value-main-2025">
+            <h2>Your Watchlist</h2>
+            <div className="value-amount-2025">{watchlist?.length || 0} Stocks</div>
+            <div className="value-change-2025">
+              <span className="change-badge-2025">👁️ Tracking {watchlist?.length || 0} Positions</span>
+              <span className="change-amount-2025">Market Monitoring</span>
             </div>
-            <button className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg border border-white/30">
-              <Plus className="h-5 w-5 inline mr-2" />
-              Add Stock
-            </button>
+          </div>
+          <div className="live-indicator-2025">
+            <div className="status-dot-2025"></div>
+            <span>LIVE</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Add to Watchlist */}
+      <div className="card-2025 quick-actions-2025" style={{gridColumn: 'span 4'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📝 Quick Actions</h3>
+        <div className="actions-grid-2025">
+          <div className="action-btn-2025" onClick={() => setActiveTab && setActiveTab('browse')}>
+            <div className="action-icon-2025 bg-green-gradient">
+              <Plus />
+            </div>
+            <div className="action-label-2025">Add Stock</div>
+          </div>
+          <div className="action-btn-2025">
+            <div className="action-icon-2025 bg-blue-gradient">
+              <Star />
+            </div>
+            <div className="action-label-2025">Favorites</div>
+          </div>
+          <div className="action-btn-2025">
+            <div className="action-icon-2025 bg-purple-gradient">
+              <TrendingUp />
+            </div>
+            <div className="action-label-2025">Top Movers</div>
+          </div>
+          <div className="action-btn-2025">
+            <div className="action-icon-2025 bg-red-gradient">
+              <Eye />
+            </div>
+            <div className="action-label-2025">Market Watch</div>
           </div>
         </div>
       </div>
 
       {/* Watchlist Grid */}
-      <div className="glass-data-grid flex-1">
-        <div className="h-full overflow-y-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {watchlist.map((stock) => {
-              // Create stock object for flyout
-              const stockForFlyout = {
-                symbol: stock.symbol,
-                name: stock.name,
-                price: stock.price,
-                change: stock.change,
-                changePercent: stock.changePercent,
-                volume: 1000000, // Default volume
-                marketCap: 50000000000, // Default market cap
-                sector: 'Technology', // Default sector
-                color: stock.color
-              };
+      <div className="card-2025" style={{gridColumn: 'span 12'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>👁️ Stocks You're Watching</h3>
+        
+        <div className="movers-grid-2025">
+          {watchlist?.map((stock) => {
+            const isPositive = stock.change >= 0;
 
-              return (
-                <div 
-                  key={stock.symbol} 
-                  className="glass-watchlist-item p-4"
-                  onClick={() => setSelectedStock(stockForFlyout)}
-                >
-                  <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-12 h-12 bg-gradient-to-r ${stock.color} rounded-xl flex items-center justify-center text-white font-bold shadow-lg`}>
-                      {stock.symbol[0]}
-                    </div>
-                    <div>
-                      <div className="font-bold text-white">{stock.symbol}</div>
-                      <div className="text-white/70 text-sm">{stock.name}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <div className="font-bold text-white text-lg">${stock.price}</div>
-                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                        stock.change >= 0 
-                          ? 'bg-green-400/20 text-green-300 border border-green-400/30' 
-                          : 'bg-red-400/20 text-red-300 border border-red-400/30'
-                      }`}>
-                        {stock.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                        {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%
-                      </div>
-                    </div>
-                    <button className="text-yellow-400 hover:text-yellow-300 transition-all duration-200 hover:scale-125 active:scale-95">
-                      <Star className="h-5 w-5" />
-                    </button>
-                  </div>
+            return (
+              <div 
+                key={stock.symbol} 
+                className="mover-card-2025"
+                onClick={() => setSelectedStock && setSelectedStock({
+                  symbol: stock.symbol,
+                  name: stock.name,
+                  price: stock.price,
+                  change: stock.change,
+                  changePercent: stock.changePercent,
+                  color: isPositive ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+                })}
+              >
+                <div className="mover-header-2025">
+                  <span className="mover-symbol-2025">{stock.symbol}</span>
+                  <span className={`mover-change-2025 ${isPositive ? 'positive-2025' : 'negative-2025'}`}>
+                    {isPositive ? '+' : ''}{stock.changePercent}%
+                  </span>
                 </div>
+                <div className="mover-price-2025">${stock.price.toLocaleString()}</div>
+                <div className="mover-name-2025">{stock.name}</div>
               </div>
-              );
-            })}
-            
-            {/* Additional demo watchlist items */}
-            {[...Array(8)].map((_, index) => (
-              <div key={`watch-demo-${index}`} className="glass-watchlist-item p-4 opacity-60">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-gray-400 to-gray-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
-                      {String.fromCharCode(68 + index)}
-                    </div>
-                    <div>
-                      <div className="font-bold text-white/60">DEMO{index + 1}</div>
-                      <div className="text-white/40 text-sm">Demo Corp {index + 1}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <div className="font-bold text-white/60 text-lg">${(50 + index * 25).toFixed(2)}</div>
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-400/20 text-gray-300 border border-gray-400/30">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        +{(0.5 + index * 0.3).toFixed(1)}%
-                      </div>
-                    </div>
-                    <button className="text-gray-400 hover:text-gray-300 transition-all duration-200 hover:scale-125 active:scale-95">
-                      <Star className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
+            );
+          })}
+          
+          {/* Show empty state if no watchlist items */}
+          {(!watchlist || watchlist.length === 0) && (
+            <div className="mover-card-2025" style={{gridColumn: 'span 3', textAlign: 'center', opacity: 0.7}}>
+              <div className="mover-header-2025">
+                <span className="mover-symbol-2025">👁️</span>
               </div>
-            ))}
+              <div className="mover-price-2025">No Stocks</div>
+              <div className="mover-name-2025">Add stocks to your watchlist to track them here</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Market Overview */}
+      <div className="card-2025" style={{gridColumn: 'span 12'}}>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📊 Market Overview</h3>
+        
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px'}}>
+          <div className="metric-card-2025">
+            <div className="metric-label-2025">S&P 500</div>
+            <div className="metric-value-2025 positive-2025">4,567.23</div>
+            <div className="holding-change-2025 positive-2025">+1.2%</div>
+          </div>
+          
+          <div className="metric-card-2025">
+            <div className="metric-label-2025">NASDAQ</div>
+            <div className="metric-value-2025 positive-2025">14,432.11</div>
+            <div className="holding-change-2025 positive-2025">+0.8%</div>
+          </div>
+          
+          <div className="metric-card-2025">
+            <div className="metric-label-2025">DOW JONES</div>
+            <div className="metric-value-2025 negative-2025">34,876.44</div>
+            <div className="holding-change-2025 negative-2025">-0.3%</div>
+          </div>
+          
+          <div className="metric-card-2025">
+            <div className="metric-label-2025">VIX</div>
+            <div className="metric-value-2025">18.76</div>
+            <div className="holding-change-2025 positive-2025">+2.1%</div>
           </div>
         </div>
       </div>

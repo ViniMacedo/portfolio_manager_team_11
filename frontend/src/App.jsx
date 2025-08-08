@@ -3,12 +3,13 @@ import { fetchPortfolioById, tradeStock, fetchUserById, fetchStockBySymbol } fro
 import StockTicker from './components/StockTicker';
 import Header from './components/Header';
 import Overview from './components/Overview';
-import Holdings from './components/Holdings';
-import Performance from './components/Performance';
-import Watchlist from './components/Watchlist';
+import Portfolio from './components/Portfolio';
+import Analytics from './components/Analytics';
+import AIInsights from './components/AIInsights';
 import BrowseStocks from './components/BrowseStocks';
 import StockFlyout from './components/StockFlyout';
 import AIAssistant from './components/AIAssistant';
+import { calculatePortfolioMetrics, getEffectivePortfolioData, getEffectiveHoldings, formatCurrency, safeNumber } from './utils/globalUtils';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -75,99 +76,10 @@ const App = () => {
     }
   }
 
-  // Calculate real portfolio data from actual holdings
-  const calculatePortfolioData = (portfolio, userInfo) => {
-    console.log('Calculating portfolio data:', { portfolio, userInfo });
-    
-    if (!portfolio?.holdings || portfolio.holdings.length === 0) {
-      console.log('No holdings found, returning zero values');
-      return {
-        totalValue: 0,
-        dayChange: 0,
-        dayChangePercent: 0,
-        totalGain: 0,
-        totalGainPercent: 0
-      };
-    }
-
-    let totalValue = 0;
-    let totalCost = 0;
-    let dayChange = 0;
-
-    console.log('Processing holdings:', portfolio.holdings);
-
-    portfolio.holdings.forEach((holding, index) => {
-      console.log(`Processing holding ${index}:`, holding);
-      
-      const quantity = holding.quantity || holding.shares || 0;
-      const price = holding.price || 0;
-      const averageCost = holding.average_cost || holding.cost_basis || price;
-      
-      const currentValue = quantity * price;
-      const costBasis = quantity * averageCost;
-      
-      console.log(`Holding ${holding.symbol}: quantity=${quantity}, price=${price}, currentValue=${currentValue}, costBasis=${costBasis}`);
-      
-      totalValue += currentValue;
-      totalCost += costBasis;
-      
-      // Simulate day change (in real app, you'd have previous day's price)
-      const estimatedDayChange = currentValue * (Math.random() * 0.04 - 0.02); // Random ±2%
-      dayChange += estimatedDayChange;
-    });
-
-    const totalGain = totalValue - totalCost;
-    const totalGainPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
-    const dayChangePercent = totalValue > 0 ? (dayChange / totalValue) * 100 : 0;
-
-    const result = {
-      totalValue,
-      dayChange,
-      dayChangePercent,
-      totalGain,
-      totalGainPercent
-    };
-    
-    console.log('Calculated portfolio data:', result);
-    return result;
-  };
-
-  // Calculate real portfolio data
-  const realPortfolioData = calculatePortfolioData(portfolio, userInfo);
-
-  // Create mock holdings for AI when no real data is available
-  const getEffectiveHoldings = () => {
-    if (portfolio?.holdings && portfolio.holdings.length > 0) {
-      // Check if we have valid price data
-      const hasValidPrices = portfolio.holdings.some(holding => 
-        holding.price && !isNaN(holding.price) && holding.price > 0
-      );
-      
-      if (hasValidPrices) {
-        return portfolio.holdings;
-      }
-    }
-    
-    // Return empty array when no valid data (no more mock data)
-    return [];
-  };
-
-  // Get effective portfolio data for AI (fallback when real data is invalid)
-  const getEffectivePortfolioData = () => {
-    // Always try to use real data first
-    if (realPortfolioData.totalValue > 0) {
-      return realPortfolioData;
-    }
-    
-    // If no real data, return minimal fallback
-    return {
-      totalValue: 0,
-      dayChange: 0,
-      dayChangePercent: 0,
-      totalGain: 0,
-      totalGainPercent: 0
-    };
-  };
+  // Calculate real portfolio data using global utilities
+  const userBalance = safeNumber(userInfo?.balance, 0);
+  const realPortfolioData = getEffectivePortfolioData(portfolio, userBalance);
+  const effectiveHoldings = getEffectiveHoldings(portfolio);
 
   const performanceData = [
     { date: 'Jan', value: 98000, change: 2.1 },
@@ -211,13 +123,13 @@ const App = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return <Overview portfolioData={realPortfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
-      case "holdings":
-        return <Holdings portfolio={portfolio} setSelectedStock={setSelectedStock} />;
-      case "performance":
-        return <Performance portfolio={portfolio} setSelectedStock={setSelectedStock} />;
-      case "watchlist":
-        return <Watchlist watchlist={watchlist} setSelectedStock={setSelectedStock} />;
+        return <Overview portfolioData={realPortfolioData} portfolio={portfolio} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
+      case "portfolio":
+        return <Portfolio portfolio={portfolio} setSelectedStock={setSelectedStock} />;
+      case "analytics":
+        return <Analytics portfolio={portfolio} setSelectedStock={setSelectedStock} />;
+      case "ai-insights":
+        return <AIInsights watchlist={watchlist} setSelectedStock={setSelectedStock} setActiveTab={setActiveTab} />;
       case "browse":
         return <BrowseStocks 
           searchQuery={searchQuery}
@@ -225,28 +137,23 @@ const App = () => {
           setSelectedStock={setSelectedStock}
         />;
       default:
-        return <Overview portfolioData={realPortfolioData} portfolio={portfolio} watchlist={watchlist} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
+        return <Overview portfolioData={realPortfolioData} portfolio={portfolio} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
     }
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-r from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      {/* Main Container - Properly Centered */}
+      <div className="container-2025">
+        {/* Header with integrated navigation tabs */}
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenAI={() => setIsAIAssistantOpen(true)} />
+        <StockTicker />
 
-      {/* Header with integrated navigation tabs */}
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenAI={() => setIsAIAssistantOpen(true)} />
-      <StockTicker />
-
-      {/* Main Content */}
-      <main className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 flex-1 overflow-hidden min-h-0">
-        <div className="h-full overflow-hidden">
+        {/* Main Content */}
+        <main className="flex-1 min-h-0">
           {renderContent()}
-        </div>
-      </main>
+        </main>
+      </div>
 
       {/* Stock Detail Flyout */}
       {selectedStock && (
@@ -263,9 +170,9 @@ const App = () => {
       <AIAssistant
         isOpen={isAIAssistantOpen}
         onClose={() => setIsAIAssistantOpen(false)}
-        portfolioData={getEffectivePortfolioData()}
+        portfolioData={realPortfolioData}
         performanceData={performanceData}
-        holdings={getEffectiveHoldings()}
+        holdings={effectiveHoldings}
       />
     </div>
   );

@@ -1,6 +1,29 @@
 @import "tailwindcss";
 @import "./styles/glassmorphism.css";
 
+/* OVERRIDE TAILWIND SCROLLBAR STYLES */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  background: transparent !important;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+  display: none !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  display: none !important;
+}
+
+/* Test to ensure styles are loading */
 .ticker {
   background: #1e293b; 
   color: white;
