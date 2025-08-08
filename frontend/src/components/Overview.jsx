@@ -10,19 +10,122 @@ import {
   isMarketOpen,
   getCurrentTimestamp 
 } from '../utils/globalUtils';
+import {
+  generatePortfolioHealthInsight,
+  generateMarketTrendInsight,
+  generatePerformanceInsight,
+  generateMarketStatusInsight,
+  generateInsightTitle
+} from '../utils/aiInsights';
 
-const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
+const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) => {
   const [marketMovers, setMarketMovers] = useState([]);
   const [topPerformers, setTopPerformers] = useState([]);
   const [portfolioInsights, setPortfolioInsights] = useState({});
   const [chartData, setChartData] = useState([]);
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
+  const [insightTitles, setInsightTitles] = useState({
+    portfolioHealth: 'Portfolio Health',
+    marketTrend: 'Market Trend',
+    performance: 'Performance',
+    marketStatus: 'Market Status'
+  });
 
   // Calculate portfolio metrics
   const totalValue = safeNumber(portfolioData.totalValue, 0);
   const dayChange = safeNumber(portfolioData.dayChange, 0);
   const dayChangePercent = safeNumber(portfolioData.dayChangePercent, 0);
   const totalHoldings = portfolio?.holdings?.length || 0;
+
+  // Handle holding click to open stock flyout
+  const handleHoldingClick = async (holding) => {
+    try {
+      const symbol = holding.product_symbol || holding.symbol;
+      if (!symbol) return;
+
+      // Fetch real-time data for the stock
+      const stockData = await fetchStockBySymbol(symbol);
+      setSelectedStock({
+        symbol: symbol,
+        name: stockData.name || `${symbol} Inc`,
+        price: stockData.price || holding.current_price || 0,
+        change: stockData.change || 0,
+        changePercent: stockData.changePercent || 0,
+        volume: stockData.volume || 'N/A',
+        marketCap: stockData.marketCap || 'N/A',
+        sector: stockData.sector || 'Technology',
+        peRatio: stockData.peRatio || 'N/A',
+        fiftyTwoWeekLow: stockData.fiftyTwoWeekLow || 'N/A',
+        fiftyTwoWeekHigh: stockData.fiftyTwoWeekHigh || 'N/A',
+        dividend: stockData.dividend || 0,
+        color: (stockData.change || 0) >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+      });
+    } catch (error) {
+      console.error('Error fetching stock details for holding:', error);
+      // Still open with basic info from holding
+      const symbol = holding.product_symbol || holding.symbol;
+      const currentPrice = holding.current_price || 0;
+      const avgPrice = safeNumber(holding.avg_price, 0);
+      const changePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
+      
+      setSelectedStock({
+        symbol: symbol,
+        name: `${symbol} Inc`,
+        price: currentPrice,
+        change: currentPrice - avgPrice,
+        changePercent: changePercent,
+        volume: 'N/A',
+        marketCap: 'N/A',
+        sector: 'Unknown',
+        peRatio: 'N/A',
+        fiftyTwoWeekLow: 'N/A',
+        fiftyTwoWeekHigh: 'N/A',
+        dividend: 0,
+        color: changePercent >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+      });
+    }
+  };
+
+  // Handle market mover click to open stock flyout
+  const handleMarketMoverClick = async (moverStock) => {
+    try {
+      // Fetch fresh data for the stock
+      const stockData = await fetchStockBySymbol(moverStock.symbol);
+      setSelectedStock({
+        symbol: moverStock.symbol,
+        name: stockData.name || moverStock.name || `${moverStock.symbol} Inc`,
+        price: stockData.price || moverStock.price || 0,
+        change: stockData.change || moverStock.change || 0,
+        changePercent: stockData.changePercent || moverStock.changePercent || 0,
+        volume: stockData.volume || 'N/A',
+        marketCap: stockData.marketCap || 'N/A',
+        sector: stockData.sector || 'Technology',
+        peRatio: stockData.peRatio || 'N/A',
+        fiftyTwoWeekLow: stockData.fiftyTwoWeekLow || 'N/A',
+        fiftyTwoWeekHigh: stockData.fiftyTwoWeekHigh || 'N/A',
+        dividend: stockData.dividend || 0,
+        color: (stockData.change || moverStock.change || 0) >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+      });
+    } catch (error) {
+      console.error('Error fetching market mover details:', error);
+      // Still open with basic info
+      setSelectedStock({
+        symbol: moverStock.symbol,
+        name: moverStock.name || `${moverStock.symbol} Inc`,
+        price: moverStock.price || 0,
+        change: moverStock.change || 0,
+        changePercent: moverStock.changePercent || 0,
+        volume: 'N/A',
+        marketCap: 'N/A',
+        sector: 'Unknown',
+        peRatio: 'N/A',
+        fiftyTwoWeekLow: 'N/A',
+        fiftyTwoWeekHigh: 'N/A',
+        dividend: 0,
+        color: (moverStock.changePercent || 0) >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+      });
+    }
+  };
 
   // Fetch market movers data on component mount
   useEffect(() => {
@@ -82,11 +185,72 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
         }
       }
 
+      // Calculate comprehensive risk metrics
+      const calculateRiskMetrics = () => {
+        let totalVolatility = 0;
+        let maxConcentration = 0;
+        let totalValue = 0;
+        const sectorExposure = {};
+        
+        portfolio.holdings.forEach(holding => {
+          const currentPrice = holding.current_price || 0;
+          const quantity = safeNumber(holding.qty, 0);
+          const value = currentPrice * quantity;
+          totalValue += value;
+          
+          // Calculate individual position volatility (simplified)
+          const avgPrice = safeNumber(holding.avg_price, 0);
+          const priceChange = avgPrice > 0 ? Math.abs((currentPrice - avgPrice) / avgPrice) : 0;
+          totalVolatility += priceChange * (value / totalValue || 0);
+          
+          // Track sector concentration (simplified - using first letter of symbol)
+          const sector = holding.product_symbol?.charAt(0) || 'Unknown';
+          sectorExposure[sector] = (sectorExposure[sector] || 0) + value;
+        });
+        
+        // Calculate maximum position concentration
+        portfolio.holdings.forEach(holding => {
+          const currentPrice = holding.current_price || 0;
+          const quantity = safeNumber(holding.qty, 0);
+          const value = currentPrice * quantity;
+          const concentration = totalValue > 0 ? (value / totalValue) * 100 : 0;
+          maxConcentration = Math.max(maxConcentration, concentration);
+        });
+        
+        // Calculate overall risk score (0-10 scale, lower is better)
+        const diversificationFactor = Math.max(0, 10 - totalHoldings); // Fewer holdings = higher risk
+        const concentrationFactor = maxConcentration * 0.1; // High concentration = higher risk
+        const volatilityFactor = totalVolatility * 100; // High volatility = higher risk
+        
+        const riskScore = Math.min(10, Math.max(0, 
+          diversificationFactor * 0.4 + 
+          concentrationFactor * 0.3 + 
+          volatilityFactor * 0.3
+        ));
+        
+        // Determine risk level
+        let riskLevel;
+        if (riskScore <= 3) riskLevel = 'Low';
+        else if (riskScore <= 6) riskLevel = 'Medium';
+        else riskLevel = 'High';
+        
+        return {
+          riskScore: riskScore.toFixed(1),
+          riskLevel,
+          maxConcentration: maxConcentration.toFixed(1),
+          diversificationScore: Math.min(10, totalHoldings * 1.2).toFixed(1)
+        };
+      };
+      
+      const riskMetrics = calculateRiskMetrics();
+
       setPortfolioInsights({
         bestPerformer,
         worstPerformer,
-        diversificationScore: Math.min(10, totalHoldings * 1.2), // Simplified diversification calculation
-        riskScore: totalHoldings > 5 ? 'Low' : totalHoldings > 2 ? 'Medium' : 'High'
+        diversificationScore: riskMetrics.diversificationScore,
+        riskScore: riskMetrics.riskLevel,
+        riskScoreNumeric: riskMetrics.riskScore,
+        maxConcentration: riskMetrics.maxConcentration
       });
     };
 
@@ -134,6 +298,26 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
     setChartData(generateChartData());
   }, [dayChangePercent, totalValue, totalHoldings]);
 
+  // Refresh insight titles periodically for variety
+  useEffect(() => {
+    const refreshTitles = () => {
+      setInsightTitles({
+        portfolioHealth: generateInsightTitle('Portfolio Health', dayChangePercent),
+        marketTrend: generateInsightTitle('Market Trend', dayChangePercent),
+        performance: generateInsightTitle('Performance', dayChangePercent),
+        marketStatus: generateInsightTitle('Market Status', dayChangePercent)
+      });
+    };
+
+    // Initial set
+    refreshTitles();
+
+    // Refresh every 30 seconds for dynamic feel
+    const titleInterval = setInterval(refreshTitles, 30000);
+
+    return () => clearInterval(titleInterval);
+  }, [dayChangePercent]);
+
   return (
     <div className="dashboard-grid-2025">
       {/* Top Row - Portfolio Value (Large Card) and AI Insights */}
@@ -156,7 +340,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
             <span>{isMarketOpen() ? 'LIVE' : 'CLOSED'}</span>
           </div>
         </div>
-        
+
         {/* Mini Chart */}
         <div className="mini-chart-2025" style={{ position: 'relative' }}>
           {chartData.map((dataPoint, index) => (
@@ -165,13 +349,13 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
               className="chart-bar-2025" 
               style={{ 
                 height: `${dataPoint.height}%`,
-                transition: 'all 0.2s ease'
+                transition: 'all 0.5s ease'
               }}
               onMouseEnter={() => setHoveredBarIndex(index)}
               onMouseLeave={() => setHoveredBarIndex(null)}
             />
           ))}
-          
+
           {/* Single tooltip container positioned relative to entire chart */}
           {hoveredBarIndex !== null && (
             <div 
@@ -180,9 +364,6 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
                 position: 'absolute',
                 bottom: '100%',
                 left: `${(hoveredBarIndex / (chartData.length - 1)) * 100}%`,
-                transform: hoveredBarIndex < 3 ? 'translateX(0%)' : 
-                          hoveredBarIndex > chartData.length - 4 ? 'translateX(-100%)' : 
-                          'translateX(-50%)',
                 background: 'rgba(0, 0, 0, 0.9)',
                 color: 'white',
                 padding: '8px 12px',
@@ -251,7 +432,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
           <div className="metric-card-2025">
             <div className="metric-label-2025">Risk Score</div>
             <div className="metric-value-2025 text-gradient-purple">
-              {portfolioInsights.riskScore || 'Medium'} {portfolioInsights.diversificationScore?.toFixed(1) || '5.0'}
+              {portfolioInsights.riskScore || 'Medium'} {portfolioInsights.riskScoreNumeric || '5.0'}
             </div>
           </div>
         </div>
@@ -260,43 +441,38 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
       {/* AI Insights - Right side */}
       <div className="card-2025 ai-insights-2025" style={{gridColumn: 'span 4'}}>
         <h3 style={{fontSize: '18px', marginBottom: '20px'}}>🤖 AI Insights</h3>
-        
+
         <div className="insight-card-2025 success">
-          <div className="insight-title-2025 positive-2025">Portfolio Health</div>
+          <div className="insight-title-2025 positive-2025">{insightTitles.portfolioHealth}</div>
           <div className="insight-text-2025">
-            {totalHoldings > 3 ? 
-              `Well diversified with ${totalHoldings} holdings. Good risk management.` :
-              `Consider diversifying beyond ${totalHoldings} holdings for better risk distribution.`
-            }
+            {generatePortfolioHealthInsight(totalHoldings)}
           </div>
         </div>
 
         <div className="insight-card-2025 warning">
           <div className="insight-title-2025" style={{color: 'var(--color-neon-yellow)'}}>
-            {dayChangePercent < -2 ? 'Risk Alert' : 'Market Trend'}
+            {insightTitles.marketTrend}
           </div>
           <div className="insight-text-2025">
-            {dayChangePercent < -2 ? 
-              'Portfolio down today. Consider reviewing positions.' :
-              'Market conditions favorable. Good time for strategic moves.'
-            }
+            {generateMarketTrendInsight(dayChangePercent)}
           </div>
         </div>
 
         <div className="insight-card-2025 info">
-          <div className="insight-title-2025" style={{color: 'var(--color-neon-purple)'}}>Performance</div>
+          <div className="insight-title-2025" style={{color: 'var(--color-neon-purple)'}}>
+            {insightTitles.performance}
+          </div>
           <div className="insight-text-2025">
-            {portfolioInsights.bestPerformer ? 
-              `${portfolioInsights.bestPerformer.product_symbol} leading gains at ${formatPercentage(portfolioInsights.bestPerformer.performancePercent)}.` :
-              'Analyzing portfolio performance...'
-            }
+            {generatePerformanceInsight(portfolioInsights.bestPerformer)}
           </div>
         </div>
 
         <div className="insight-card-2025 info">
-          <div className="insight-title-2025" style={{color: 'var(--color-neon-blue)'}}>Market Status</div>
+          <div className="insight-title-2025" style={{color: 'var(--color-neon-blue)'}}>
+            {insightTitles.marketStatus}
+          </div>
           <div className="insight-text-2025">
-            Market is currently {isMarketOpen() ? 'open' : 'closed'}. Last updated: {getCurrentTimestamp()}.
+            {generateMarketStatusInsight(isMarketOpen(), getCurrentTimestamp())}
           </div>
         </div>
       </div>
@@ -315,7 +491,12 @@ const Overview = ({ portfolioData, portfolio, setActiveTab }) => {
             const symbol = holding.product_symbol || holding.symbol || 'N/A';
             
             return (
-              <div key={symbol} className="holding-item-2025">
+              <div 
+                key={symbol} 
+                className="holding-item-2025"
+                onClick={() => handleHoldingClick(holding)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="holding-left-2025">
                   <div className="holding-icon-2025" style={{
                     background: index === 0 ? 'linear-gradient(135deg, #10b981, #059669)' :
