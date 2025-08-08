@@ -160,3 +160,6 @@ The AI Assistant uses **real portfolio data** from your actual holdings to provi
 ## DB Diagram
 
 ![DB Diagram](assets/db_diagram_team11.png)
+
+## Presentation link
+[Slides](https://www.canva.com/design/DAGvfqILxII/kpHVmkCWh0tH1WhwBNyDbQ/edit)
