@@ -1,191 +1,249 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Search, TrendingUp, TrendingDown, Brain, Zap, Star } from "lucide-react";
-import { fetchAllStocks, fetchStockBySymbol } from "../services/api";
-import { formatCurrency, formatPercentage } from "../utils/globalUtils";
+import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from "react";
+import { Search } from "lucide-react";
+import debounce from "lodash/debounce";
+import { FixedSizeGrid as Grid } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { 
+  searchSymbolsPaged, 
+  discoverSymbolsPaged,
+  fetchQuotesBatch, 
+  fetchStockBySymbol 
+} from "../services/api";
 
-const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock, portfolio, portfolioData }) => {
-  const [stocks, setStocks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filteredStocks, setFilteredStocks] = useState([]);
-  const [displayedStocks, setDisplayedStocks] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [showAIRecommendations, setShowAIRecommendations] = useState(false);
-  const STOCKS_PER_PAGE = 20;
+const IDEAL_CARD_W = 320;
+const CARD_H = 280;
+const GAP = 24;
+const GRID_MAX_HEIGHT = 600;
 
-  // Generate AI recommendations based on portfolio
-  const generateAIRecommendations = () => {
-    if (!portfolio || !portfolio.holdings || portfolio.holdings.length === 0) {
-      return {
-        recommendations: [
-          { symbol: 'AAPL', reason: 'Strong fundamentals and growth potential' },
-          { symbol: 'MSFT', reason: 'Diversified technology portfolio' },
-          { symbol: 'GOOGL', reason: 'Dominant market position in search and cloud' },
-          { symbol: 'TSLA', reason: 'Electric vehicle market leader' },
-        ],
-        message: 'Since you\'re starting your portfolio, here are some popular stocks with strong fundamentals.'
-      };
-    }
+const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
+  // Double-buffer approach to prevent flicker
+  const [symbols, setSymbols] = useState([]);           // source of truth for paging
+  const [viewSymbols, setViewSymbols] = useState([]);   // what the Grid renders
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchVersionRef = useRef(0);
 
-    const holdings = portfolio.holdings.map(h => h.symbol);
-    const hasNonTech = holdings.some(symbol => !['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'META', 'AMZN', 'NVDA'].includes(symbol));
-    const hasFinancials = holdings.some(symbol => ['JPM', 'BAC', 'WFC', 'GS'].includes(symbol));
-    const hasHealthcare = holdings.some(symbol => ['JNJ', 'PFE', 'UNH', 'MRK'].includes(symbol));
+  // Quotes cache + status
+  const detailsCache = useRef(new Map());
+  const [loadingDetailsMap, setLoadingDetailsMap] = useState(new Map());
+  const [errorDetailsMap, setErrorDetailsMap] = useState(new Map());
 
-    let recommendations = [];
-    let message = 'Based on your current holdings, here are AI-powered recommendations to improve diversification:';
+  // Fetch queue for visible symbols (batched)
+  const detailsQueue = useRef([]);
+  const processingQueue = useRef(false);
 
-    if (!hasNonTech && holdings.length > 0) {
-      recommendations.push(
-        { symbol: 'JPM', reason: 'Diversify with financial sector exposure' },
-        { symbol: 'JNJ', reason: 'Add healthcare sector stability' },
-        { symbol: 'XOM', reason: 'Energy sector hedge against inflation' }
-      );
-    }
+  // Use deferred value to prevent typing spikes
+  const deferredQuery = useDeferredValue(searchQuery);
 
-    if (!hasFinancials) {
-      recommendations.push({ symbol: 'JPM', reason: 'Leading investment bank with strong dividend' });
-    }
-
-    if (!hasHealthcare) {
-      recommendations.push({ symbol: 'JNJ', reason: 'Defensive healthcare stock with consistent dividends' });
-    }
-
-    if (recommendations.length === 0) {
-      recommendations = [
-        { symbol: 'VTI', reason: 'Total market ETF for broader diversification' },
-        { symbol: 'BRK.B', reason: 'Berkshire Hathaway for value exposure' },
-        { symbol: 'VOO', reason: 'S&P 500 ETF for market exposure' }
-      ];
-    }
-
-    return { recommendations: recommendations.slice(0, 4), message };
-  };
-
-  const aiData = generateAIRecommendations();
-
-  // Load initial stocks with enhanced data
-  useEffect(() => {
-    const loadStocks = async () => {
-      try {
-        setLoading(true);
-        const allStocks = await fetchAllStocks();
-        
-        // Enhance stocks with real price data
-        const enhancedStocks = await Promise.all(
-          allStocks.slice(0, 50).map(async (stock) => {
-            try {
-              const stockData = await fetchStockBySymbol(stock.symbol);
-              return {
-                ...stock,
-                price: stockData.price || Math.random() * 200 + 10,
-                change: stockData.change || (Math.random() - 0.5) * 10,
-                changePercent: stockData.changePercent || (Math.random() - 0.5) * 5,
-                volume: stockData.volume || Math.floor(Math.random() * 10000000),
-                marketCap: stockData.marketCap || Math.floor(Math.random() * 100000000000)
-              };
-            } catch (error) {
-              return {
-                ...stock,
-                price: Math.random() * 200 + 10,
-                change: (Math.random() - 0.5) * 10,
-                changePercent: (Math.random() - 0.5) * 5,
-                volume: Math.floor(Math.random() * 10000000),
-                marketCap: Math.floor(Math.random() * 100000000000)
-              };
-            }
-          })
-        );
-        
-        setStocks(enhancedStocks);
-        setFilteredStocks(enhancedStocks);
-      } catch (error) {
-        console.error('Failed to load stocks:', error);
-        setStocks([]);
-        setFilteredStocks([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStocks();
+  // --- Helpers ---
+  const resetCache = useCallback(() => {
+    detailsCache.current.clear();
+    setLoadingDetailsMap(new Map());
+    setErrorDetailsMap(new Map());
   }, []);
 
-  // Filter stocks based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredStocks(stocks);
-    } else {
-      const filtered = stocks.filter(stock =>
-        stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredStocks(filtered);
-    }
-    setPage(1);
-    setHasMore(true);
-  }, [searchQuery, stocks]);
+  // Double-buffer search with version guard
+  const debouncedSearch = useMemo(() =>
+    debounce(async (q) => {
+      const query = (q || "").trim();
+      const version = ++searchVersionRef.current;
+      setIsSearching(true);
 
-  // Handle pagination for displayed stocks
-  useEffect(() => {
-    const startIndex = 0;
-    const endIndex = page * STOCKS_PER_PAGE;
-    const stocksToShow = filteredStocks.slice(startIndex, endIndex);
-    setDisplayedStocks(stocksToShow);
-    setHasMore(endIndex < filteredStocks.length);
-  }, [filteredStocks, page]);
+      try {
+        resetCache(); // Clear quote cache for new search
+        
+        if (!query) {
+          // Load default feed
+          const { items, nextCursor } = await discoverSymbolsPaged({ cursor: null, limit: 100 });
+          if (searchVersionRef.current !== version) return; // stale
+          setSymbols(items);
+          setViewSymbols(items);  // swap when ready (no flash)
+          setCursor(nextCursor);
+          setHasMore(!!nextCursor);
+        } else {
+          // Search for symbols
+          const { items, nextCursor } = await searchSymbolsPaged({ q: query, cursor: null, limit: 500 });
+          if (searchVersionRef.current !== version) return; // stale
+          
+          // Keep empty results as empty - don't fall back to discovery
+          setSymbols(items); // Could be empty array
+          setViewSymbols(items); // Could be empty array
+          setCursor(nextCursor);
+          setHasMore(!!nextCursor);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        // On error, show empty results for search queries
+        if (query) {
+          setSymbols([]);
+          setViewSymbols([]);
+          setCursor(null);
+          setHasMore(false);
+        }
+      } finally {
+        if (searchVersionRef.current === version) setIsSearching(false);
+      }
+    }, 250),
+  [resetCache]);
 
-  // Infinite scroll handler
-  const handleScroll = useCallback((e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    if (scrollHeight - scrollTop <= clientHeight * 1.5 && hasMore && !loading) {
-      setPage(prev => prev + 1);
-    }
-  }, [hasMore, loading]);
-
-  const handleStockClick = async (stock) => {
+  // Load more symbols for pagination
+  const loadMoreSymbols = useCallback(async () => {
+    if (isSearching || !hasMore) return;
+    
     try {
-      // Fetch real-time data for the stock
-      const stockData = await fetchStockBySymbol(stock.symbol);
-      setSelectedStock({
-        symbol: stock.symbol,
-        name: stock.name,
-        price: stockData.price || 0,
-        change: stockData.change || 0,
-        changePercent: stockData.change || 0,
-        volume: stockData.volume || 'N/A',
-        marketCap: stockData.marketCap || 'N/A',
-        sector: stockData.sector || 'Technology',
-        peRatio: stockData.peRatio || 'N/A',
-        fiftyTwoWeekLow: stockData.fiftyTwoWeekLow || 'N/A',
-        fiftyTwoWeekHigh: stockData.fiftyTwoWeekHigh || 'N/A',
-        dividend: stockData.dividend || 0,
-        color: (stockData.change || 0) >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
-      });
+      const query = (deferredQuery || "").trim();
+      let result;
+      
+      if (!query) {
+        result = await discoverSymbolsPaged({ cursor, limit: 100 });
+      } else {
+        // For search queries, only load more if we already have results
+        if (symbols.length === 0) return; // Don't load more if no initial results
+        result = await searchSymbolsPaged({ q: query, cursor, limit: 500 });
+      }
+      
+      const newSymbols = [...symbols, ...result.items];
+      setSymbols(newSymbols);
+      setViewSymbols(newSymbols);
+      setCursor(result.nextCursor);
+      setHasMore(!!result.nextCursor);
     } catch (error) {
-      console.error('Error fetching stock details:', error);
-      // Still open with basic info
-      setSelectedStock({
-        symbol: stock.symbol,
-        name: stock.name,
-        price: 0,
-        change: 0,
-        changePercent: 0,
-        volume: 'N/A',
-        marketCap: 'N/A',
-        sector: 'Technology',
-        color: 'from-blue-400 to-blue-600'
-      });
+      console.error('Load more error:', error);
     }
-  };
+  }, [isSearching, hasMore, cursor, symbols, deferredQuery]);
+
+  // Initial load - only when truly empty (no search query)
+  useEffect(() => {
+    const hasQuery = (deferredQuery || "").trim().length > 0;
+    if (viewSymbols.length === 0 && !isSearching && !hasQuery) {
+      debouncedSearch("");
+    }
+  }, [viewSymbols.length, isSearching, deferredQuery, debouncedSearch]);
+
+  useEffect(() => {
+    debouncedSearch(deferredQuery);
+    return () => debouncedSearch.cancel();
+  }, [deferredQuery, debouncedSearch]);
+
+  // Batch-process visible queue
+  const processDetailsQueue = useCallback(async () => {
+    if (processingQueue.current || detailsQueue.current.length === 0) return;
+    processingQueue.current = true;
+    const BATCH_SIZE = 10;
+
+    while (detailsQueue.current.length > 0) {
+      const batch = detailsQueue.current.splice(0, BATCH_SIZE);
+      
+      setLoadingDetailsMap(prev => {
+        const next = new Map(prev);
+        batch.forEach(s => next.set(s, true));
+        return next;
+      });
+
+      try {
+        const quotes = await fetchQuotesBatch(batch);
+        
+        // cache successes
+        Object.entries(quotes).forEach(([sym, det]) => {
+          if (det) {
+            detailsCache.current.set(sym, det);
+          }
+        });
+        
+        // mark missing as error
+        const missing = batch.filter(s => !quotes[s]);
+        if (missing.length) {
+          setErrorDetailsMap(prev => {
+            const next = new Map(prev);
+            missing.forEach(s => next.set(s, true));
+            return next;
+          });
+        }
+      } catch (error) {
+        console.error('Batch quote error:', error);
+        // whole-batch error
+        setErrorDetailsMap(prev => {
+          const next = new Map(prev);
+          batch.forEach(s => next.set(s, true));
+          return next;
+        });
+      } finally {
+        setLoadingDetailsMap(prev => {
+          const next = new Map(prev);
+          batch.forEach(s => next.delete(s));
+          return next;
+        });
+      }
+
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    processingQueue.current = false;
+  }, []);
+
+  // Click a card: ensure details, fallback to single fetch
+  const handleCardClick = useCallback(async (item) => {
+    const sym = item.symbol;
+    let details = detailsCache.current.get(sym);
+    if (!details) {
+      try { details = await fetchStockBySymbol(sym); } catch { /* ignore */ }
+    }
+    const d = details || {};
+    setSelectedStock({
+      symbol: item.symbol,
+      name: item.name,
+      price: d.price ?? 0,
+      change: d.change ?? 0,
+      changePercent: d.changePercent ?? 0,
+      volume: d.volume ?? 'N/A',
+      marketCap: d.marketCap ?? 'N/A',
+      sector: d.sector || item.sector || '—',
+      peRatio: d.peRatio ?? 'N/A',
+      fiftyTwoWeekLow: d.fiftyTwoWeekLow ?? 'N/A',
+      fiftyTwoWeekHigh: d.fiftyTwoWeekHigh ?? 'N/A',
+      dividend: d.dividend ?? 0,
+      color: (d.change ?? 0) >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+    });
+  }, [setSelectedStock]);
+
+  const onItemsRendered = useCallback(({ visibleRowStartIndex, visibleRowStopIndex, columnCount }) => {
+    const startIndex = visibleRowStartIndex * columnCount;
+    const endIndex = Math.min(viewSymbols.length - 1, (visibleRowStopIndex + 1) * columnCount - 1);
+
+    // queue quotes for visible symbols
+    for (let i = startIndex; i <= endIndex; i++) {
+      const sym = viewSymbols[i]?.symbol;
+      if (!sym) continue;
+      if (
+        !detailsCache.current.has(sym) &&
+        !loadingDetailsMap.get(sym) &&
+        !errorDetailsMap.get(sym) &&
+        !detailsQueue.current.includes(sym)
+      ) {
+        detailsQueue.current.push(sym);
+      }
+    }
+    if (detailsQueue.current.length) processDetailsQueue();
+
+    // page more symbols when near the end
+    const rowCount = Math.ceil(viewSymbols.length / columnCount);
+    const BUFFER_ROWS = 2;
+    const thresholdIndex = (rowCount - BUFFER_ROWS) * columnCount;
+    if (hasMore && endIndex >= thresholdIndex && !isSearching) {
+      loadMoreSymbols();
+    }
+  }, [
+    viewSymbols, loadingDetailsMap, errorDetailsMap, processDetailsQueue,
+    hasMore, isSearching, loadMoreSymbols
+  ]);
 
   return (
     <div className="dashboard-grid-2025">
-      {/* Search Header with AI Recommendations Button */}
-      <div  style={{gridColumn: 'span 12'}}>
-        <div style={{display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px'}}>
-          {/* Search Bar */}
-          <div style={{position: 'relative', flex: 1}}>
+      {/* Search Header */}
+      <div style={{ gridColumn: 'span 12' }}>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
             <div style={{
               background: 'rgba(255, 255, 255, 0.05)',
               backdropFilter: 'blur(20px)',
@@ -196,178 +254,180 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock, portfolio
               alignItems: 'center',
               gap: '12px'
             }}>
-              <Search style={{width: '20px', height: '20px', color: 'rgba(255, 255, 255, 0.6)'}} />
+              <Search style={{ width: '20px', height: '20px', color: 'rgba(255, 255, 255, 0.6)' }} />
               <input
                 type="text"
-                placeholder="Search stocks by symbol or name..."
+                placeholder="Search symbols (e.g. AAPL, TSLA, MSFT)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  flex: 1,
-                  color: '#ffffff',
-                  fontSize: '16px'
+                style={{ 
+                  background: 'transparent', 
+                  border: 'none', 
+                  outline: 'none', 
+                  flex: 1, 
+                  color: '#ffffff', 
+                  fontSize: '16px' 
                 }}
               />
             </div>
           </div>
-
-          {/* AI Recommendations Button */}
-          <button
-            onClick={() => setShowAIRecommendations(!showAIRecommendations)}
-            className={`ai-recommendations-btn ${showAIRecommendations ? 'active' : ''}`}
-            style={{
-              background: showAIRecommendations 
-                ? 'linear-gradient(135deg, var(--color-neon-purple), var(--color-neon-blue))' 
-                : 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: '50px',
-              padding: '12px 24px',
-              border: showAIRecommendations 
-                ? '1px solid var(--color-neon-purple)' 
-                : '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            <Brain size={16} />
-            {showAIRecommendations ? 'Hide AI' : 'AI Recommendations'}
-          </button>
         </div>
-
-        {/* AI Recommendations Panel */}
-        {showAIRecommendations && (
-          <div className="card-2025 ai-panel" style={{
-            marginBottom: '20px',
-            background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.1))',
-            border: '1px solid rgba(147, 51, 234, 0.3)'
-          }}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                background: 'linear-gradient(135deg, var(--color-neon-purple), var(--color-neon-blue))',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Zap size={16} color="white" />
-              </div>
-              <h3 style={{color: 'white', fontSize: '18px', fontWeight: '600', margin: 0}}>
-                AI Portfolio Recommendations
-              </h3>
-            </div>
-            
-            <p style={{color: 'rgba(255, 255, 255, 0.8)', marginBottom: '20px', lineHeight: '1.5'}}>
-              {aiData.message}
-            </p>
-
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px'}}>
-              {aiData.recommendations.map((rec, index) => (
-                <div key={index} style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.target.style.transform = 'translateY(0)';
-                }}
-                onClick={() => {
-                  // Find the stock in our list and open it
-                  const foundStock = stocks.find(s => s.symbol === rec.symbol);
-                  if (foundStock) {
-                    handleStockClick(foundStock);
-                  }
-                }}>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-                    <Star size={14} color="var(--color-neon-yellow)" />
-                    <span style={{color: 'white', fontWeight: '600', fontSize: '16px'}}>{rec.symbol}</span>
-                  </div>
-                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px', margin: 0, lineHeight: '1.4'}}>
-                    {rec.reason}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Stock Grid */}
-      <div className="card-2025" style={{gridColumn: 'span 12'}}>        
-        <div 
-          className="movers-grid-2025" 
-          style={{maxHeight: '600px', overflowY: 'auto'}}
-          onScroll={handleScroll}
-        >
-          {loading ? (
-            // Loading placeholders
-            [...Array(6)].map((_, index) => (
-              <div key={index} className="mover-card-2025" style={{opacity: 0.5}}>
-                <div className="mover-header-2025">
-                  <span className="mover-symbol-2025">...</span>
-                  <span className="mover-change-2025">--</span>
-                </div>
-                <div className="mover-price-2025">Loading...</div>
-                <div className="mover-name-2025">Please wait</div>
-              </div>
-            ))
-          ) : displayedStocks.length > 0 ? (
-            <>
-              {displayedStocks.map((stock) => (
-                <div 
-                  key={stock.symbol} 
-                  className="mover-card-2025"
-                  onClick={() => handleStockClick(stock)}
-                >
-                  <div className="mover-header-2025">
-                    <span className="mover-symbol-2025">{stock.symbol}</span>
-                    <span className={`mover-change-2025 ${stock.changePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
-                      {formatPercentage(stock.changePercent)}
-                    </span>
-                  </div>
-                  <div className="mover-price-2025">{formatCurrency(stock.price)}</div>
-                  <div className="mover-name-2025">{stock.name}</div>
-                </div>
-              ))}
-              {hasMore && (
-                <div className="mover-card-2025" style={{opacity: 0.5}}>
-                  <div className="mover-header-2025">
-                    <span className="mover-symbol-2025">...</span>
-                    <span className="mover-change-2025">--</span>
-                  </div>
-                  <div className="mover-price-2025">Loading more...</div>
-                  <div className="mover-name-2025">Scroll for more</div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="mover-card-2025" style={{gridColumn: 'span 3', textAlign: 'center', opacity: 0.7}}>
-              <div className="mover-header-2025">
-                <span className="mover-symbol-2025">---</span>
-              </div>
-              <div className="mover-price-2025">No Results</div>
-              <div className="mover-name-2025">Try a different search term</div>
-            </div>
-          )}
+      {/* Virtualized Grid */}
+      <div className="card-2025" style={{ gridColumn: 'span 12' }}>
+        <div className="movers-grid-2025" style={{ 
+          maxHeight: `${GRID_MAX_HEIGHT}px`, 
+          overflowY: 'auto',
+          position: 'relative'
+        }}>
+          <div style={{ height: GRID_MAX_HEIGHT }}>
+            <AutoSizer>
+              {({ width, height }) => {
+                const columnCount = Math.max(1, Math.floor((width + GAP) / (IDEAL_CARD_W + GAP)));
+                const columnWidth = Math.floor((width - (columnCount - 1) * GAP) / columnCount);
+                const rowCount = Math.max(1, Math.ceil((viewSymbols.length || 1) / columnCount));
+                const actualHeight = Math.min(height, GRID_MAX_HEIGHT);
+
+                return (
+                  <>
+                    <Grid
+                      columnCount={columnCount}
+                      rowCount={rowCount}
+                      height={actualHeight}
+                      width={width}
+                      columnWidth={columnWidth}
+                      rowHeight={CARD_H}
+                      onItemsRendered={(params) => onItemsRendered({ ...params, columnCount })}
+                      className="outline-none"
+                    >
+                      {({ columnIndex, rowIndex, style }) => {
+                        const index = rowIndex * columnCount + columnIndex;
+                        const item = viewSymbols[index];
+                        
+                        // Show loading/empty state in first cell only
+                        if (index === 0 && viewSymbols.length === 0) {
+                          const hasSearchQuery = (deferredQuery || "").trim().length > 0;
+                          return (
+                            <div className="vw-cell-outer" style={style}>
+                              <div className="vw-cell-pad">
+                                <div className="mover-card-2025" style={{ textAlign: 'center', opacity: 0.7 }}>
+                                  <div className="mover-header-2025">
+                                    <span className="mover-symbol-2025">
+                                      {isSearching ? '...' : (hasSearchQuery ? '❌' : '---')}
+                                    </span>
+                                  </div>
+                                  <div className="mover-price-2025">
+                                    {isSearching ? 'Searching...' : 
+                                     hasSearchQuery ? 'No matches found' : 'Start searching'}
+                                  </div>
+                                  <div className="mover-name-2025">
+                                    {isSearching ? 'Please wait' : 
+                                     hasSearchQuery ? 'Try a different symbol' : 'Enter a symbol (e.g. AAPL)'}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Empty placeholder cells
+                        if (!item) {
+                          return (
+                            <div className="vw-cell-outer" style={style}>
+                              <div className="vw-cell-pad">
+                                <div className="mover-card-2025" style={{ opacity: 0.1 }} />
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        const sym = item.symbol;
+                        const details = detailsCache.current.get(sym);
+                        const isLoading = !!loadingDetailsMap.get(sym);
+                        const isError = !!errorDetailsMap.get(sym);
+
+                        return (
+                          <div className="vw-cell-outer" style={style}>
+                            <div className="vw-cell-pad">
+                              <div 
+                                className="mover-card-2025" 
+                                onClick={() => handleCardClick(item)}
+                                style={{ 
+                                  opacity: isSearching ? 0.8 : 1,
+                                  transition: 'opacity 0.2s ease'
+                                }}
+                              >
+                                <div className="mover-header-2025">
+                                  <span className="mover-symbol-2025">{sym}</span>
+                                  {details ? (
+                                    <span className={`mover-change-2025 ${details.change >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+                                      {details.changePercent ? 
+                                        `${details.changePercent.toFixed(2)}%` :
+                                        details.price > 0 ? `${((details.change / details.price) * 100).toFixed(2)}%` : '--'
+                                      }
+                                    </span>
+                                  ) : isError ? (
+                                    <span className="mover-change-2025">ERR</span>
+                                  ) : (
+                                    <span className="mover-change-2025">--</span>
+                                  )}
+                                </div>
+                                <div className="mover-price-2025">
+                                  {details ? `$${details.price?.toFixed(2) || '0.00'}` : (isLoading ? 'Loading…' : '—')}
+                                </div>
+                                <div className="mover-name-2025">{item.name}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    </Grid>
+                    
+                    {/* Non-blocking search overlay */}
+                    {isSearching && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        backdropFilter: 'blur(2px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '16px',
+                        zIndex: 10
+                      }}>
+                        <div style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          backdropFilter: 'blur(20px)',
+                          padding: '16px 24px',
+                          borderRadius: '100px',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          color: 'white'
+                        }}>
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid rgba(255, 255, 255, 0.3)',
+                            borderTop: '2px solid white',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }} />
+                          <span>Searching...</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              }}
+            </AutoSizer>
+          </div>
         </div>
       </div>
     </div>

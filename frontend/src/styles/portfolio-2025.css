@@ -1,5 +1,10 @@
 /* Portfolio AI Suite 2025 - Complete Design System */
 
+/* Keyframe Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* CSS Custom Properties (Design Tokens) */
 :root {
   /* Core Palette */
@@ -702,6 +707,20 @@ body::after {
   padding: var(--space-lg);
   cursor: pointer;
   transition: all 0.3s ease;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.vw-cell-outer {
+  position: absolute;
+}
+
+.vw-cell-pad {
+  padding: 24px;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .mover-card-2025:hover {
@@ -2362,4 +2381,22 @@ body::after {
   .stock-flyout-chart-stats-2025 {
     grid-template-columns: 1fr;
   }
+}
+
+/* Virtual Window Cell Styles for react-window */
+.mover-card-2025 { 
+  box-sizing: border-box; 
+  width: 100%; 
+  height: 100%; 
+  margin: 0; 
+}
+
+.vw-cell-outer { 
+  position: absolute; 
+}
+
+.vw-cell-pad { 
+  padding: 24px; 
+  height: 100%; 
+  box-sizing: border-box; 
 }

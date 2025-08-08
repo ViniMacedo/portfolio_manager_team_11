@@ -135,8 +135,6 @@ const App = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           setSelectedStock={setSelectedStock}
-          portfolio={portfolio}
-          portfolioData={realPortfolioData}
         />;
       default:
         return <Overview portfolioData={realPortfolioData} portfolio={portfolio} performanceData={performanceData} handleTradeStock={handleTradeStock} setActiveTab={setActiveTab} setSelectedStock={setSelectedStock} />;
