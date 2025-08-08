@@ -335,10 +335,6 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
               </span>
             </div>
           </div>
-          <div className={`live-indicator-2025 ${!isMarketOpen() ? 'closed' : ''}`}>
-            <div className={`status-dot-2025 ${isMarketOpen() ? 'live' : 'closed'}`}></div>
-            <span>{isMarketOpen() ? 'LIVE' : 'CLOSED'}</span>
-          </div>
         </div>
 
         {/* Mini Chart */}
@@ -440,7 +436,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
 
       {/* AI Insights - Right side */}
       <div className="card-2025 ai-insights-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>🤖 AI Insights</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>AI Insights</h3>
 
         <div className="insight-card-2025 success">
           <div className="insight-title-2025 positive-2025">{insightTitles.portfolioHealth}</div>
@@ -479,7 +475,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
 
       {/* Second Row - Top Holdings */}
       <div className="card-2025 holdings-card-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📊 Top Holdings</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>Top Holdings</h3>
 
         {portfolio.holdings && portfolio.holdings.length > 0 ? (
           portfolio.holdings.slice(0, 3).map((holding, index) => {
@@ -534,7 +530,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
 
       {/* Quick Actions */}
       <div className="card-2025 quick-actions-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>⚡ Quick Actions</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>Quick Actions</h3>
         
         <div className="actions-grid-2025">
           <div className="action-btn-2025" onClick={() => setActiveTab('browse')}>
@@ -566,7 +562,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
 
       {/* Performance */}
       <div className="card-2025 performance-card-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📈 Performance</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>Performance</h3>
         
         <div className="performance-item-2025">
           <div className="performance-header-2025">
@@ -636,7 +632,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
 
       {/* Market Movers - Full Width */}
       <div className="card-2025 market-movers-2025" style={{gridColumn: 'span 12'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>🚀 Market Movers</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>Market Movers</h3>
         
         <div className="movers-grid-2025">
           {marketMovers.length > 0 ? (

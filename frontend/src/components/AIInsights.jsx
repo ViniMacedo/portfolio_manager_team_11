@@ -59,7 +59,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
     
     if (concentration > 50) {
       recommendations.push({
-        icon: '⚖️',
+        icon: '',
         title: 'Rebalance Suggestion',
         text: `Portfolio is ${concentration.toFixed(1)}% concentrated. Consider diversifying across more holdings.`
       });
@@ -67,7 +67,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
     
     if (portfolioMetrics.holdingsCount < 5) {
       recommendations.push({
-        icon: '💎',
+        icon: '',
         title: 'Diversification',
         text: `Add more holdings to reduce risk. Consider different sectors or asset classes.`
       });
@@ -75,13 +75,13 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
     
     if (volatility > 40) {
       recommendations.push({
-        icon: '🛡️',
+        icon: '',
         title: 'Risk Management',
         text: `High volatility detected (${volatility.toFixed(1)}%). Consider adding stable assets.`
       });
     } else if (volatility < 15 && portfolioMetrics.totalGainPercent < 5) {
       recommendations.push({
-        icon: '📈',
+        icon: '',
         title: 'Growth Opportunity',
         text: `Low volatility suggests room for growth investments if risk tolerance allows.`
       });
@@ -90,7 +90,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
     // If no specific recommendations, provide general advice
     if (recommendations.length === 0) {
       recommendations.push({
-        icon: '✨',
+        icon: '',
         title: 'Portfolio Health',
         text: 'Portfolio appears well-balanced. Continue monitoring for optimization opportunities.'
       });
@@ -104,7 +104,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
     <div className="dashboard-grid-2025">
       {/* AI Insights - Main Section */}
       <div className="card-2025 ai-insights-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>🤖 AI Insights</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>AI Insights</h3>
         
         {aiInsights.length > 0 ? (
           aiInsights.map((insight, index) => (
@@ -126,7 +126,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
         ) : (
           <div className="insight-card-2025 info">
             <div className="insight-title-2025" style={{color: 'var(--color-neon-blue)'}}>
-              🤖 Ready to Analyze
+              AI Ready to Analyze
             </div>
             <div className="insight-text-2025">
               Add holdings to your portfolio to receive AI-powered insights and recommendations.
@@ -137,7 +137,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
 
       {/* Real Portfolio Metrics */}
       <div className="card-2025 ai-predictions-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>📊 Portfolio Metrics</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>Portfolio Metrics</h3>
         
         <div className="prediction-card-2025">
           <div className="prediction-header-2025">
@@ -150,7 +150,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
             Current Value: <strong style={{color: 'var(--color-neon-green)'}}>{formatCurrency(portfolioMetrics.totalValue)}</strong>
           </div>
           <div className="prediction-trend-2025">
-            <div className="trend-arrow-2025">{portfolioMetrics.totalGainPercent >= 0 ? '📈' : '📉'}</div>
+            <div className="trend-arrow-2025">{portfolioMetrics.totalGainPercent >= 0 ? '↗' : '↘'}</div>
             <span className="trend-percentage-2025">
               {portfolioMetrics.holdingsCount} Holdings
             </span>
@@ -168,7 +168,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
             Volatility: <strong style={{color: 'var(--color-neon-blue)'}}>{volatility.toFixed(1)}%</strong>
           </div>
           <div className="prediction-trend-2025">
-            <div className="trend-arrow-2025">🛡️</div>
+            <div className="trend-arrow-2025">⚡</div>
             <span className="trend-percentage-2025">
               {concentration.toFixed(1)}% Concentrated
             </span>
@@ -190,7 +190,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
             </strong>
           </div>
           <div className="prediction-trend-2025">
-            <div className="trend-arrow-2025">🎯</div>
+            <div className="trend-arrow-2025">●</div>
             <span className="trend-percentage-2025">
               AI Analyzed
             </span>
@@ -200,7 +200,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
 
       {/* AI Portfolio Optimizer Section */}
       <div className="card-2025 ai-optimizer-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>⚡ AI Optimizer</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>AI Optimizer</h3>
         
         <div className="optimizer-metric-2025">
           <div className="optimizer-label-2025">Portfolio Score</div>
@@ -239,7 +239,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px'}}>
             {/* Portfolio Status */}
             <div className="ai-analysis-section-2025">
-              <h4 style={{color: 'var(--color-neon-green)', marginBottom: '12px'}}>📊 Portfolio Status</h4>
+              <h4 style={{color: 'var(--color-neon-green)', marginBottom: '12px'}}>Portfolio Status</h4>
               <div className="analysis-metric-2025">
                 <span className="metric-label-2025">Total Value</span>
                 <span className="metric-value-2025 positive-2025">{formatCurrency(portfolioMetrics.totalValue)}</span>
@@ -260,7 +260,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
 
             {/* Risk Assessment */}
             <div className="ai-analysis-section-2025">
-              <h4 style={{color: 'var(--color-neon-blue)', marginBottom: '12px'}}>🛡️ Risk Assessment</h4>
+              <h4 style={{color: 'var(--color-neon-blue)', marginBottom: '12px'}}>Risk Assessment</h4>
               <div className="analysis-metric-2025">
                 <span className="metric-label-2025">Volatility</span>
                 <span className="metric-value-2025" style={{
@@ -292,7 +292,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
 
             {/* AI Recommendations */}
             <div className="ai-analysis-section-2025">
-              <h4 style={{color: 'var(--color-neon-purple)', marginBottom: '12px'}}>🤖 AI Recommendations</h4>
+              <h4 style={{color: 'var(--color-neon-purple)', marginBottom: '12px'}}>AI Recommendations</h4>
               <div className="analysis-metric-2025">
                 <span className="metric-label-2025">Portfolio Score</span>
                 <span className="metric-value-2025" style={{
@@ -333,7 +333,7 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
         {/* AI Recommendations Actions */}
         {portfolioMetrics.holdingsCount > 0 && (
           <div style={{marginTop: '24px', padding: '20px', background: 'var(--color-surface)', borderRadius: '12px', border: '1px solid var(--color-border)'}}>
-            <h4 style={{marginBottom: '16px', color: 'var(--color-neon-green)'}}>🎯 Recommended Actions</h4>
+            <h4 style={{marginBottom: '16px', color: 'var(--color-neon-green)'}}>Recommended Actions</h4>
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px'}}>
               <button className="ai-action-btn-2025" onClick={() => setActiveTab && setActiveTab('browse')}>
                 <Zap className="h-4 w-4" />

@@ -75,10 +75,10 @@ export default function StockTicker() {
 
     return (
       <div className="stock-ticker-2025">
-        <div className="ticker-scroll-2025" style={{animationPlayState: 'paused'}}>
-          {placeholderStocks.map((s, index) => (
-            <div key={`${s.symbol}-${index}`} className="ticker-item-2025" style={{opacity: 0.5}}>
-              <span className="ticker-symbol-2025">{s.symbol}</span>
+        <div className="ticker-scroll-2025">
+          {[...popularStocks, ...popularStocks, ...popularStocks, ...popularStocks].slice(0, 32).map((symbol, index) => (
+            <div key={`${symbol}-${index}`} className="ticker-item-2025" style={{opacity: 0.5}}>
+              <span className="ticker-symbol-2025">{symbol}</span>
               <span className="ticker-price-2025">Loading...</span>
               <span className="ticker-change-2025">--</span>
             </div>
@@ -91,8 +91,8 @@ export default function StockTicker() {
   return (
     <div className="stock-ticker-2025">
       <div className="ticker-scroll-2025">
-        {/* Create enough copies for seamless infinite loop */}
-        {[...stocks, ...stocks, ...stocks].map((s, index) => (
+        {/* Create enough copies for truly seamless infinite loop */}
+        {[...stocks, ...stocks, ...stocks, ...stocks].map((s, index) => (
           <div key={`${s.symbol}-${index}`} className="ticker-item-2025">
             <span className="ticker-symbol-2025">{s.symbol}</span>
             <span className="ticker-price-2025">${s.price.toFixed(2)}</span>

@@ -1746,17 +1746,19 @@ body::after {
 
 .stock-flyout-header-content-2025 {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2xl);
-  align-items: center;
-  text-align: center;
+  flex-direction: row;
+  gap: var(--space-3xl);
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: left;
 }
 
 .stock-flyout-header-left-2025 {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-md);
+  flex: 1;
 }
 
 .stock-flyout-title-row-2025 {
@@ -1815,8 +1817,9 @@ body::after {
 .stock-flyout-header-right-2025 {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--space-md);
+  text-align: right;
 }
 
 .stock-flyout-price-2025 {

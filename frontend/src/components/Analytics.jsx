@@ -75,7 +75,7 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
         
         <div className="value-header-2025">
           <div className="value-main-2025" style={{paddingRight: '100px'}}>
-            <h2 style={{fontSize: 'var(--text-lg)', marginBottom: 'var(--space-sm)'}}>📊 Portfolio Analytics</h2>
+            <h2 style={{fontSize: 'var(--text-lg)', marginBottom: 'var(--space-sm)'}}>Portfolio Analytics</h2>
             <div className="value-amount-2025" style={{fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-xs)'}}>
               ${currentValue.toLocaleString()}
             </div>
@@ -149,7 +149,173 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
         </div>
       </div>
 
-      {/* Time Period Returns & Risk Analysis */}
+      {/* Performance Chart */}
+      <div className="card-2025" style={{gridColumn: 'span 8', padding: 'var(--space-lg)'}}>
+        <h3 style={{fontSize: 'var(--text-base)', marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '6px'}}>
+          <BarChart3 size={18} />
+          Portfolio Performance Chart
+        </h3>
+        
+        <div style={{position: 'relative', height: '300px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.05)'}}>
+          {/* Chart Grid */}
+          <div style={{position: 'absolute', inset: '20px', opacity: 0.3}}>
+            {[...Array(5)].map((_, i) => (
+              <div key={`h-${i}`} style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: `${i * 25}%`,
+                height: '1px',
+                background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)'
+              }} />
+            ))}
+            {[...Array(7)].map((_, i) => (
+              <div key={`v-${i}`} style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: `${i * 16.66}%`,
+                width: '1px',
+                background: 'linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1), transparent)'
+              }} />
+            ))}
+          </div>
+          
+          {/* Performance Line Chart */}
+          <svg style={{position: 'absolute', inset: '20px', width: 'calc(100% - 40px)', height: 'calc(100% - 40px)', opacity: 0.7}} viewBox="0 0 300 200">
+            <defs>
+              <linearGradient id="performanceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style={{stopColor: totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', stopOpacity: 0.3}} />
+                <stop offset="100%" style={{stopColor: totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', stopOpacity: 0.05}} />
+              </linearGradient>
+            </defs>
+            <path
+              d={`M 10 ${150 + (totalReturn * -0.5)} Q 50 ${140 + (dailyReturn * -2)} 80 ${135 + (weeklyReturn * -1)} T 150 ${130 + (monthlyReturn * -1)} Q 200 ${125 + (ytdReturn * -0.3)} 250 ${120 + (totalReturn * -0.5)} T 290 ${115 + (totalReturn * -0.4)}`}
+              stroke={totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)'}
+              strokeWidth="2"
+              fill="none"
+              style={{filter: 'drop-shadow(0 0 4px currentColor)'}}
+            />
+            <path
+              d={`M 10 ${150 + (totalReturn * -0.5)} Q 50 ${140 + (dailyReturn * -2)} 80 ${135 + (weeklyReturn * -1)} T 150 ${130 + (monthlyReturn * -1)} Q 200 ${125 + (ytdReturn * -0.3)} 250 ${120 + (totalReturn * -0.5)} T 290 ${115 + (totalReturn * -0.4)} L 290 200 L 10 200 Z`}
+              fill="url(#performanceGradient)"
+            />
+          </svg>
+          
+          {/* Chart Labels */}
+          <div style={{position: 'absolute', bottom: '5px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)'}}>
+            <span>1D</span>
+            <span>1W</span>
+            <span>1M</span>
+            <span>3M</span>
+            <span>6M</span>
+            <span>YTD</span>
+            <span>1Y</span>
+          </div>
+          
+          {/* Performance Indicator */}
+          <div style={{position: 'absolute', top: '20px', right: '20px', background: 'rgba(0, 0, 0, 0.4)', padding: '8px 12px', borderRadius: '6px', backdropFilter: 'blur(10px)'}}>
+            <div style={{fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)'}}>Total Return</div>
+            <div style={{fontSize: '18px', fontWeight: 'bold', color: totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', fontFamily: 'JetBrains Mono, monospace'}}>
+              {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Asset Allocation Pie Chart */}
+      <div className="card-2025" style={{gridColumn: 'span 4', padding: 'var(--space-lg)'}}>
+        <h3 style={{fontSize: 'var(--text-base)', marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '6px'}}>
+          <PieChart size={18} />
+          Asset Allocation
+        </h3>
+        
+        <div style={{position: 'relative', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          {portfolio?.holdings?.length > 0 ? (
+            <>
+              {/* Pie Chart Visualization */}
+              <div style={{position: 'relative', width: '160px', height: '160px'}}>
+                <svg width="160" height="160" style={{transform: 'rotate(-90deg)'}}>
+                  {portfolio.holdings.map((holding, index) => {
+                    const marketValue = getMarketValue(holding);
+                    const percentage = totalValue > 0 ? (marketValue / totalValue) * 100 : 0;
+                    const angle = (percentage / 100) * 360;
+                    const startAngle = portfolio.holdings.slice(0, index).reduce((sum, h) => {
+                      const val = getMarketValue(h);
+                      return sum + ((val / totalValue) * 360);
+                    }, 0);
+                    
+                    const startAngleRad = (startAngle * Math.PI) / 180;
+                    const endAngleRad = ((startAngle + angle) * Math.PI) / 180;
+                    
+                    const largeArcFlag = angle > 180 ? 1 : 0;
+                    const x1 = 80 + 70 * Math.cos(startAngleRad);
+                    const y1 = 80 + 70 * Math.sin(startAngleRad);
+                    const x2 = 80 + 70 * Math.cos(endAngleRad);
+                    const y2 = 80 + 70 * Math.sin(endAngleRad);
+                    
+                    const pathData = [
+                      `M 80 80`,
+                      `L ${x1} ${y1}`,
+                      `A 70 70 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                      'Z'
+                    ].join(' ');
+                    
+                    const colors = ['var(--color-neon-blue)', 'var(--color-neon-green)', 'var(--color-neon-purple)', 'var(--color-neon-yellow)', 'var(--color-neon-red)'];
+                    
+                    return (
+                      <path
+                        key={holding.symbol}
+                        d={pathData}
+                        fill={colors[index % colors.length]}
+                        opacity={0.7}
+                        stroke="rgba(255, 255, 255, 0.1)"
+                        strokeWidth="1"
+                      />
+                    );
+                  })}
+                </svg>
+                
+                {/* Center Label */}
+                <div style={{position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center'}}>
+                  <div style={{fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)'}}>Portfolio</div>
+                  <div style={{fontSize: '14px', fontWeight: 'bold', color: 'white'}}>{portfolio.holdings.length}</div>
+                  <div style={{fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)'}}>Holdings</div>
+                </div>
+              </div>
+              
+              {/* Legend */}
+              <div style={{position: 'absolute', top: 0, right: 0, maxHeight: '200px', overflowY: 'auto'}}>
+                {portfolio.holdings.slice(0, 5).map((holding, index) => {
+                  const marketValue = getMarketValue(holding);
+                  const percentage = totalValue > 0 ? (marketValue / totalValue) * 100 : 0;
+                  const colors = ['var(--color-neon-blue)', 'var(--color-neon-green)', 'var(--color-neon-purple)', 'var(--color-neon-yellow)', 'var(--color-neon-red)'];
+                  
+                  return (
+                    <div key={holding.symbol} style={{display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px'}}>
+                      <div style={{width: '8px', height: '8px', borderRadius: '50%', background: colors[index % colors.length]}} />
+                      <div style={{fontSize: '11px'}}>
+                        <div style={{color: 'white', fontWeight: '600'}}>{holding.symbol}</div>
+                        <div style={{color: 'rgba(255, 255, 255, 0.6)'}}>{percentage.toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {portfolio.holdings.length > 5 && (
+                  <div style={{fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', marginTop: '4px'}}>
+                    +{portfolio.holdings.length - 5} more
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)'}}>
+              <PieChart size={48} style={{marginBottom: '8px', opacity: 0.5}} />
+              <div style={{fontSize: '12px'}}>No holdings to display</div>
+            </div>
+          )}
+        </div>
+      </div>
       <div className="card-2025" style={{gridColumn: 'span 6', padding: 'var(--space-lg)'}}>
         <h3 style={{fontSize: 'var(--text-base)', marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '6px'}}>
           <Calendar size={18} />
@@ -342,7 +508,7 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
           </div>
         ) : (
           <div className="empty-state-2025">
-            <div className="empty-icon-2025">📊</div>
+            <div className="empty-icon-2025">Analytics</div>
             <div className="empty-title-2025">No Holdings Data</div>
             <div className="empty-description-2025">
               Add stocks to your portfolio to see detailed performance analytics

@@ -73,7 +73,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
 
       {/* Portfolio Stats */}
       <div className="card-2025" style={{gridColumn: 'span 4'}}>
-        <h3 className="section-title-2025">📊 Portfolio Analytics</h3>
+        <h3 className="section-title-2025">Portfolio Analytics</h3>
         <div className="stats-grid-2025">
           <div className="stat-item-2025">
             <span className="stat-label-2025">Active Positions</span>
@@ -99,12 +99,12 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
 
       {/* Top/Worst Performers */}
       <div className="card-2025" style={{gridColumn: 'span 4'}}>
-        <h3 className="section-title-2025">🏆 Performance Leaders</h3>
+        <h3 className="section-title-2025">Performance Leaders</h3>
         <div className="performance-leaders-2025">
           {topPerformer && (
             <div className="leader-item-2025">
               <div className="leader-header-2025">
-                <span className="leader-label-2025">🚀 Top Performer</span>
+                <span className="leader-label-2025">Top Performer</span>
                 <span className="leader-symbol-2025">{topPerformer.symbol}</span>
               </div>
               <div className="leader-performance-2025 positive-2025">
@@ -115,7 +115,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
           {worstPerformer && (
             <div className="leader-item-2025">
               <div className="leader-header-2025">
-                <span className="leader-label-2025">📉 Needs Attention</span>
+                <span className="leader-label-2025">Needs Attention</span>
                 <span className="leader-symbol-2025">{worstPerformer.symbol}</span>
               </div>
               <div className="leader-performance-2025 negative-2025">
@@ -126,7 +126,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
           {!topPerformer && !worstPerformer && portfolio.holdings?.length === 0 && (
             <div className="leader-item-2025">
               <div className="leader-header-2025">
-                <span className="leader-label-2025">📈 No Holdings</span>
+                <span className="leader-label-2025">No Holdings</span>
               </div>
               <div className="leader-performance-2025">
                 Add stocks to see performance
@@ -224,7 +224,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
           {/* Empty State */}
           {(!portfolio.holdings || portfolio.holdings.length === 0) && (
             <div className="empty-state-2025">
-              <div className="empty-icon-2025">📈</div>
+              <div className="empty-icon-2025">Portfolio</div>
               <div className="empty-title-2025">No Holdings Yet</div>
               <div className="empty-description-2025">
                 Start building your portfolio by browsing and investing in stocks
