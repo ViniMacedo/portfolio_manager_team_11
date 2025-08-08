@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Zap, Eye, Download, Share } from 'lucide-react';
 import { exportPortfolioToCSV, sharePortfolioLink } from '../utils/exportUtils';
 import { fetchStockBySymbol } from '../services/api';
@@ -31,16 +31,42 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
     marketStatus: 'Market Status'
   });
 
+  // Memoized hover handlers to prevent unnecessary re-renders
+  const handleBarMouseEnter = useCallback((index) => {
+    setHoveredBarIndex(index);
+  }, []);
+
+  const handleBarMouseLeave = useCallback(() => {
+    setHoveredBarIndex(null);
+  }, []);
+
   // Calculate portfolio metrics
   const totalValue = safeNumber(portfolioData.totalValue, 0);
   const dayChange = safeNumber(portfolioData.dayChange, 0);
   const dayChangePercent = safeNumber(portfolioData.dayChangePercent, 0);
   const totalHoldings = portfolio?.holdings?.length || 0;
 
+  // Memoize AI insight generations to prevent recalculation on hover
+  const portfolioHealthInsight = useMemo(() => {
+    return generatePortfolioHealthInsight(totalHoldings);
+  }, [totalHoldings]);
+
+  const marketTrendInsight = useMemo(() => {
+    return generateMarketTrendInsight(dayChangePercent);
+  }, [dayChangePercent]);
+
+  const marketStatusInsight = useMemo(() => {
+    return generateMarketStatusInsight(isMarketOpen(), getCurrentTimestamp());
+  }, []); // No dependencies since market status doesn't change frequently
+
+  const performanceInsight = useMemo(() => {
+    return generatePerformanceInsight(portfolioInsights.bestPerformer);
+  }, [portfolioInsights.bestPerformer]);
+
   // Handle holding click to open stock flyout
   const handleHoldingClick = async (holding) => {
     try {
-      const symbol = holding.product_symbol || holding.symbol;
+      const symbol = holding.symbol;
       if (!symbol) return;
 
       // Fetch real-time data for the stock
@@ -63,7 +89,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
     } catch (error) {
       console.error('Error fetching stock details for holding:', error);
       // Still open with basic info from holding
-      const symbol = holding.product_symbol || holding.symbol;
+      const symbol = holding.symbol;
       const currentPrice = holding.current_price || 0;
       const avgPrice = safeNumber(holding.avg_price, 0);
       const changePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
@@ -169,19 +195,19 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
           const currentPrice = holding.current_price || 0;
           const avgPrice = safeNumber(holding.avg_price, 0);
           const performancePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
-          const symbol = holding.product_symbol || holding.symbol || 'Unknown';
+          const symbol = holding.symbol || 'Unknown';
 
           if (performancePercent > maxGain) {
             maxGain = performancePercent;
-            bestPerformer = { ...holding, performancePercent, product_symbol: symbol };
+            bestPerformer = { ...holding, performancePercent, symbol: symbol };
           }
 
           if (performancePercent < maxLoss) {
             maxLoss = performancePercent;
-            worstPerformer = { ...holding, performancePercent, product_symbol: symbol };
+            worstPerformer = { ...holding, performancePercent, symbol: symbol };
           }
         } catch (error) {
-          console.error(`Error calculating performance for ${holding.product_symbol || 'unknown holding'}:`, error);
+          console.error(`Error calculating performance for ${holding.symbol || 'unknown holding'}:`, error);
         }
       }
 
@@ -194,7 +220,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
         
         portfolio.holdings.forEach(holding => {
           const currentPrice = holding.current_price || 0;
-          const quantity = safeNumber(holding.qty, 0);
+          const quantity = safeNumber(holding.shares, 0); // Fixed: use 'shares'
           const value = currentPrice * quantity;
           totalValue += value;
           
@@ -204,14 +230,14 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
           totalVolatility += priceChange * (value / totalValue || 0);
           
           // Track sector concentration (simplified - using first letter of symbol)
-          const sector = holding.product_symbol?.charAt(0) || 'Unknown';
+          const sector = holding.symbol?.charAt(0) || 'Unknown';
           sectorExposure[sector] = (sectorExposure[sector] || 0) + value;
         });
         
         // Calculate maximum position concentration
         portfolio.holdings.forEach(holding => {
           const currentPrice = holding.current_price || 0;
-          const quantity = safeNumber(holding.qty, 0);
+          const quantity = safeNumber(holding.shares, 0); // Fixed: use 'shares'
           const value = currentPrice * quantity;
           const concentration = totalValue > 0 ? (value / totalValue) * 100 : 0;
           maxConcentration = Math.max(maxConcentration, concentration);
@@ -347,8 +373,8 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
                 height: `${dataPoint.height}%`,
                 transition: 'all 0.5s ease'
               }}
-              onMouseEnter={() => setHoveredBarIndex(index)}
-              onMouseLeave={() => setHoveredBarIndex(null)}
+              onMouseEnter={() => handleBarMouseEnter(index)}
+              onMouseLeave={handleBarMouseLeave}
             />
           ))}
 
@@ -359,7 +385,8 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
               style={{
                 position: 'absolute',
                 bottom: '100%',
-                left: `${(hoveredBarIndex / (chartData.length - 1)) * 100}%`,
+                left: '50%',
+                transform: 'translateX(-50%)',
                 background: 'rgba(0, 0, 0, 0.9)',
                 color: 'white',
                 padding: '8px 12px',
@@ -371,7 +398,10 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
                 marginBottom: '5px',
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                // Fixed width and position to prevent any movement
+                width: '160px',
+                textAlign: 'center'
               }}
             >
               <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
@@ -386,17 +416,13 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
               }}>
                 {chartData[hoveredBarIndex]?.change >= 0 ? '+' : ''}{chartData[hoveredBarIndex]?.change?.toFixed(2)}%
               </div>
-              {/* Tooltip arrow */}
+              {/* Tooltip arrow - fixed position */}
               <div 
                 style={{
                   position: 'absolute',
                   top: '100%',
-                  left: hoveredBarIndex < 3 ? '20px' : 
-                        hoveredBarIndex > chartData.length - 4 ? 'calc(100% - 20px)' : 
-                        '50%',
-                  transform: hoveredBarIndex < 3 ? 'translateX(0%)' : 
-                            hoveredBarIndex > chartData.length - 4 ? 'translateX(-100%)' : 
-                            'translateX(-50%)',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   width: 0,
                   height: 0,
                   borderLeft: '4px solid transparent',
@@ -420,7 +446,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
             <div className="metric-label-2025">Best Performer</div>
             <div className="metric-value-2025 text-gradient-blue">
               {portfolioInsights.bestPerformer ? 
-                `${portfolioInsights.bestPerformer.product_symbol} ${formatPercentage(portfolioInsights.bestPerformer.performancePercent)}` : 
+                `${portfolioInsights.bestPerformer.symbol} ${formatPercentage(portfolioInsights.bestPerformer.performancePercent)}` : 
                 'Loading...'
               }
             </div>
@@ -441,7 +467,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
         <div className="insight-card-2025 success">
           <div className="insight-title-2025 positive-2025">{insightTitles.portfolioHealth}</div>
           <div className="insight-text-2025">
-            {generatePortfolioHealthInsight(totalHoldings)}
+            {portfolioHealthInsight}
           </div>
         </div>
 
@@ -450,7 +476,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
             {insightTitles.marketTrend}
           </div>
           <div className="insight-text-2025">
-            {generateMarketTrendInsight(dayChangePercent)}
+            {marketTrendInsight}
           </div>
         </div>
 
@@ -459,7 +485,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
             {insightTitles.performance}
           </div>
           <div className="insight-text-2025">
-            {generatePerformanceInsight(portfolioInsights.bestPerformer)}
+            {performanceInsight}
           </div>
         </div>
 
@@ -468,7 +494,7 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
             {insightTitles.marketStatus}
           </div>
           <div className="insight-text-2025">
-            {generateMarketStatusInsight(isMarketOpen(), getCurrentTimestamp())}
+            {marketStatusInsight}
           </div>
         </div>
       </div>
@@ -481,10 +507,10 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
           portfolio.holdings.slice(0, 3).map((holding, index) => {
             const currentPrice = safeNumber(holding.current_price, 0);
             const avgPrice = safeNumber(holding.avg_price, 0);
-            const quantity = safeNumber(holding.qty, 0);
+            const quantity = safeNumber(holding.shares, 0); // Fixed: use 'shares' from backend
             const value = currentPrice * quantity;
             const performancePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
-            const symbol = holding.product_symbol || holding.symbol || 'N/A';
+            const symbol = holding.symbol || 'N/A'; // Fixed: use 'symbol' from backend
             
             return (
               <div 
@@ -637,7 +663,12 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
         <div className="movers-grid-2025">
           {marketMovers.length > 0 ? (
             marketMovers.map((stock) => (
-              <div key={stock.symbol} className="mover-card-2025">
+              <div 
+                key={stock.symbol} 
+                className="mover-card-2025"
+                onClick={() => handleMarketMoverClick(stock)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="mover-header-2025">
                   <span className="mover-symbol-2025">{stock.symbol}</span>
                   <span className={`mover-change-2025 ${stock.changePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>

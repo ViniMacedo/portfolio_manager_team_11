@@ -18,9 +18,55 @@ const App = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [aiStatus, setAiStatus] = useState({ hasError: false, lastError: null, isActive: true });
 
+  // AI Status Management Functions
+  const handleAIError = (error) => {
+    console.error('AI Error:', error);
+    setAiStatus({
+      hasError: true,
+      lastError: error,
+      isActive: false
+    });
+  };
+
+  const handleAISuccess = () => {
+    setAiStatus({
+      hasError: false,
+      lastError: null,
+      isActive: true
+    });
+  };
+
+  const resetAIStatus = () => {
+    setAiStatus({
+      hasError: false,
+      lastError: null,
+      isActive: true
+    });
+  };
+
+  // Check AI status on app load
+  const checkAIStatus = async () => {
+    try {
+      // Test if AI service has API key configured
+      const testApiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+      if (!testApiKey || testApiKey.trim() === '') {
+        handleAIError('API key not configured. Please add VITE_OPENROUTER_API_KEY to your .env file.');
+        return;
+      }
+      
+      // AI is properly configured
+      handleAISuccess();
+    } catch (error) {
+      handleAIError(error.message || 'AI service initialization failed');
+    }
+  };
 
   useEffect(() => {
+    // Check AI status on startup
+    checkAIStatus();
+    
     fetchPortfolioById(1).then(data => {
       console.log('Portfolio data received:', data);
       setPortfolio(data);
@@ -146,8 +192,14 @@ const App = () => {
       {/* Main Container - Properly Centered */}
       <div className="container-2025">
         {/* Header with integrated navigation tabs */}
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenAI={() => setIsAIAssistantOpen(true)} />
-        <StockTicker />
+        <Header 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          onOpenAI={() => setIsAIAssistantOpen(true)}
+          aiStatus={aiStatus}
+          onResetAIStatus={resetAIStatus}
+        />
+        <StockTicker setSelectedStock={setSelectedStock} />
 
         {/* Main Content */}
         <main className="flex-1 min-h-0">
@@ -173,6 +225,8 @@ const App = () => {
         portfolioData={realPortfolioData}
         performanceData={performanceData}
         holdings={effectiveHoldings}
+        onAIError={handleAIError}
+        onAISuccess={handleAISuccess}
       />
     </div>
   );
