@@ -20,6 +20,8 @@ const FlyoutChip = ({ tone='neutral', children }) => {
 
 const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance = 0 }) => {
   const [quantity, setQuantity] = useState(1);
+  const [isTrading, setIsTrading] = useState(false);
+  const [lastTradeType, setLastTradeType] = useState(null);
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose?.();
@@ -44,8 +46,37 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
     setQuantity(Math.max(1, Number.isFinite(v) ? v : 1));
   };
 
-  const buy = () => onTradeStock?.(stock.symbol, 'BUY', quantity, stockPrice);
-  const sell = () => onTradeStock?.(stock.symbol, 'SELL', quantity, stockPrice);
+  const buy = async () => {
+    if (isTrading) return;
+    setIsTrading(true);
+    setLastTradeType('BUY');
+    try {
+      await onTradeStock?.(stock.symbol, 'BUY', quantity, stockPrice);
+      // Reset quantity after successful trade
+      setQuantity(1);
+    } catch (error) {
+      console.error('Trade failed:', error);
+    } finally {
+      setIsTrading(false);
+      setTimeout(() => setLastTradeType(null), 2000); // Clear indicator after 2 seconds
+    }
+  };
+
+  const sell = async () => {
+    if (isTrading) return;
+    setIsTrading(true);
+    setLastTradeType('SELL');
+    try {
+      await onTradeStock?.(stock.symbol, 'SELL', quantity, stockPrice);
+      // Reset quantity after successful trade
+      setQuantity(1);
+    } catch (error) {
+      console.error('Trade failed:', error);
+    } finally {
+      setIsTrading(false);
+      setTimeout(() => setLastTradeType(null), 2000); // Clear indicator after 2 seconds
+    }
+  };
   const onBackdrop = (e) => { if (e.target === e.currentTarget) onClose?.(); };
 
   const momentum = changePct >= 2 ? {label:'Strong Bullish', cls:'bg-emerald-400'} :
@@ -257,37 +288,76 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
               <div className="stock-flyout-trade-actions-2025">
                 <button 
                   onClick={buy} 
-                  disabled={totalPrice > balance}
-                  className={`stock-flyout-trade-btn-2025 ${totalPrice > balance 
-                    ? 'stock-flyout-btn-disabled-2025' 
-                    : 'stock-flyout-btn-buy-2025'}`}
+                  disabled={totalPrice > balance || isTrading}
+                  className={`stock-flyout-trade-btn-2025 ${
+                    totalPrice > balance || isTrading
+                      ? 'stock-flyout-btn-disabled-2025' 
+                      : lastTradeType === 'BUY'
+                        ? 'stock-flyout-btn-success-2025'
+                        : 'stock-flyout-btn-buy-2025'
+                  }`}
                 >
                   <div className="stock-flyout-btn-content-2025">
                     <span className="stock-flyout-btn-main-2025">
-                      <Plus className="h-5 w-5" />
-                      Buy {quantity.toLocaleString()} {stock.symbol}
+                      {isTrading && lastTradeType === 'BUY' ? (
+                        <>
+                          <div className="spinner-2025"></div>
+                          Processing...
+                        </>
+                      ) : lastTradeType === 'BUY' ? (
+                        <>
+                          <Target className="h-5 w-5" />
+                          Trade Executed!
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-5 w-5" />
+                          Buy {quantity.toLocaleString()} {stock.symbol}
+                        </>
+                      )}
                     </span>
                     <div className="stock-flyout-btn-sub-2025">
-                      {totalPrice > balance ? 'Insufficient balance' : `Total: ${formatCurrency(totalPrice)}`}
+                      {totalPrice > balance ? 'Insufficient balance' 
+                        : lastTradeType === 'BUY' ? 'Successfully purchased' 
+                        : `Total: ${formatCurrency(totalPrice)}`}
                     </div>
                   </div>
                 </button>
 
                 <button 
                   onClick={sell} 
-                  disabled={quantity > currentShares || currentShares === 0}
-                  className={`stock-flyout-trade-btn-2025 ${(quantity > currentShares || currentShares === 0)
-                    ? 'stock-flyout-btn-disabled-2025' 
-                    : 'stock-flyout-btn-sell-2025'}`}
+                  disabled={quantity > currentShares || currentShares === 0 || isTrading}
+                  className={`stock-flyout-trade-btn-2025 ${
+                    (quantity > currentShares || currentShares === 0 || isTrading)
+                      ? 'stock-flyout-btn-disabled-2025' 
+                      : lastTradeType === 'SELL'
+                        ? 'stock-flyout-btn-success-2025'
+                        : 'stock-flyout-btn-sell-2025'
+                  }`}
                 >
                   <div className="stock-flyout-btn-content-2025">
                     <span className="stock-flyout-btn-main-2025">
-                      <TrendingDown className="h-5 w-5" />
-                      Sell {quantity.toLocaleString()} {stock.symbol}
+                      {isTrading && lastTradeType === 'SELL' ? (
+                        <>
+                          <div className="spinner-2025"></div>
+                          Processing...
+                        </>
+                      ) : lastTradeType === 'SELL' ? (
+                        <>
+                          <Target className="h-5 w-5" />
+                          Trade Executed!
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown className="h-5 w-5" />
+                          Sell {quantity.toLocaleString()} {stock.symbol}
+                        </>
+                      )}
                     </span>
                     <div className="stock-flyout-btn-sub-2025">
                       {currentShares === 0 ? 'No shares owned'
                         : quantity > currentShares ? `Max: ${currentShares.toLocaleString()} shares`
+                        : lastTradeType === 'SELL' ? 'Successfully sold'
                         : `Receive: ${formatCurrency(totalPrice)}`}
                     </div>
                   </div>

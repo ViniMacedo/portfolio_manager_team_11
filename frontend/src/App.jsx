@@ -57,11 +57,11 @@ const App = () => {
     try {
       const result = await tradeStock(
         userInfo.id,
+        portfolio.id,
         stockSymbol, 
-        action, 
         quantity, 
         price, 
-        portfolio.id
+        action
       );
       console.log('Trade successful:', result);
       
