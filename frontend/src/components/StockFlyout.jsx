@@ -72,8 +72,10 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                   {live ? 'LIVE' : 'CLOSED'}
                 </FlyoutChip>
               </div>
-              <p className="stock-flyout-name-2025">{stock.name}</p>
-              <p className="stock-flyout-sector-2025">{stock.sector || 'Technology'}</p>
+              <div className="flex items-center gap-4 mb-2">
+                <p className="stock-flyout-name-2025">{stock.name}</p>
+                <p className="stock-flyout-sector-2025">• {stock.sector || 'Technology'}</p>
+              </div>
 
               {currentShares > 0 && (
                 <div className="stock-flyout-holdings-2025">
@@ -84,10 +86,12 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
             </div>
 
             <div className="stock-flyout-header-right-2025">
-              <div className="stock-flyout-price-2025">{formatCurrency(stockPrice)}</div>
-              <div className={`stock-flyout-change-2025 ${changePct >= 0 ? 'positive-2025' : 'negative-2025'}`}>
-                {changePct >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
-                {formatPercentage(changePct)} ({formatCurrency(stockChange, 2)})
+              <div className="flex items-baseline gap-3 mb-1">
+                <div className="stock-flyout-price-2025">{formatCurrency(stockPrice)}</div>
+                <div className={`stock-flyout-change-2025 ${changePct >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+                  {changePct >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+                  {formatPercentage(changePct)} ({formatCurrency(stockChange, 2)})
+                </div>
               </div>
               <div className="stock-flyout-timestamp-2025">Last updated: {getCurrentTimestamp()}</div>
             </div>
