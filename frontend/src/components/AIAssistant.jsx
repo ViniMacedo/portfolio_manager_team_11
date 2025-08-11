@@ -2,38 +2,7 @@ import React, { useState } from 'react';
 import { X, Brain, TrendingUp, Calculator, BookOpen, Send, Loader, MessageCircle } from 'lucide-react';
 import { generatePortfolioStory, generateRebalanceAdvice, generateTaxLossAdvice, askFollowUpQuestion, AI_SERVICES } from '../services/aiService';
 
-const ServiceItem = ({ id, icon: Icon, title, description, selected, disabled, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    aria-pressed={selected}
-    className={[
-      "w-full min-h-[88px] p-4 rounded-xl border text-left transition-all duration-150",
-      selected
-        ? "bg-white/15 border-white/20 ring-1 ring-[color:var(--color-neon-purple)]/30 shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
-        : "bg-white/10 border-white/15 hover:bg-white/12 hover:border-white/20 hover:shadow-[0_8px_22px_rgba(0,0,0,0.25)]",
-      disabled ? "opacity-50 cursor-not-allowed" : ""
-    ].join(" ")}
-  >
-    <div className="grid grid-cols-[40px_1fr] gap-3 items-center">
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
-        style={{ background: 'linear-gradient(135deg,var(--color-neon-purple),var(--color-neon-blue))' }}
-      >
-        <Icon className="h-5 w-5 text-white" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-white font-semibold text-sm leading-[1.2] truncate">{title}</div>
-        <div className="text-white/70 text-xs leading-relaxed line-clamp-2">
-          {description}
-        </div>
-      </div>
-    </div>
-  </button>
-);
-
-const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings, onAIError, onAISuccess }) => {
+const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings }) => {
   const [activeService, setActiveService] = useState(null);
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,11 +22,8 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
           const story = await generatePortfolioStory(portfolioData, performanceData, holdings);
           setResponse(story);
           setConversationHistory([{ type: 'ai', content: story, service: 'Portfolio Storyteller' }]);
-          onAISuccess && onAISuccess();
         } catch (error) {
-          const errorMessage = 'Sorry, I encountered an error generating your portfolio story. Please try again.';
-          setResponse(errorMessage);
-          onAIError && onAIError(error.message || 'Portfolio story generation failed');
+          setResponse('Sorry, I encountered an error generating your portfolio story. Please try again.');
         }
         setLoading(false);
       }
@@ -74,11 +40,8 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
           const advice = await generateRebalanceAdvice(portfolioData, holdings);
           setResponse(advice);
           setConversationHistory([{ type: 'ai', content: advice, service: 'Rebalance Advisor' }]);
-          onAISuccess && onAISuccess();
         } catch (error) {
-          const errorMessage = 'Sorry, I encountered an error generating rebalancing advice. Please try again.';
-          setResponse(errorMessage);
-          onAIError && onAIError(error.message || 'Rebalancing advice generation failed');
+          setResponse('Sorry, I encountered an error generating rebalancing advice. Please try again.');
         }
         setLoading(false);
       }
@@ -95,11 +58,8 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
           const taxAdvice = await generateTaxLossAdvice(portfolioData, holdings);
           setResponse(taxAdvice);
           setConversationHistory([{ type: 'ai', content: taxAdvice, service: 'Tax-Loss Harvesting' }]);
-          onAISuccess && onAISuccess();
         } catch (error) {
-          const errorMessage = 'Sorry, I encountered an error generating tax advice. Please try again.';
-          setResponse(errorMessage);
-          onAIError && onAIError(error.message || 'Tax advice generation failed');
+          setResponse('Sorry, I encountered an error generating tax advice. Please try again.');
         }
         setLoading(false);
       }
@@ -131,15 +91,12 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
       // Add AI response to conversation
       setConversationHistory([...newHistory, { type: 'ai', content: followUpResponse, service: 'Follow-up' }]);
       setResponse(followUpResponse);
-      onAISuccess && onAISuccess();
     } catch (error) {
-      const errorMessage = 'Sorry, I had trouble understanding your question. Could you please rephrase it?';
       setConversationHistory([...newHistory, { 
         type: 'ai', 
-        content: errorMessage,
+        content: 'Sorry, I had trouble understanding your question. Could you please rephrase it?',
         service: 'Follow-up'
       }]);
-      onAIError && onAIError(error.message || 'Follow-up question failed');
     }
     setLoading(false);
   };
@@ -154,38 +111,24 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="AI Portfolio Assistant"
-        className="relative z-[61] w-[min(92vw,1100px)] h-[min(80vh,740px)] bg-white/10 backdrop-blur-xl rounded-2xl border border-white/12 shadow-[0_12px_40px_rgba(0,0,0,0.35)] overflow-hidden"
-      >
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-4xl max-h-[90vh] bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div
-          className="relative px-6 py-4 border-b border-white/10"
-          style={{ background: 'linear-gradient(135deg,var(--color-neon-purple),var(--color-neon-blue))' }}
-        >
+        <div className="relative bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 p-6 border-b border-white/20">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
           <div className="relative flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
-                style={{ background: 'linear-gradient(135deg,var(--color-neon-purple),var(--color-neon-blue))' }}
-              >
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <Brain className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white tracking-wide">AI Portfolio Assistant</h2>
-                <p className="text-white/85 text-xs leading-relaxed">Powered by advanced AI analysis</p>
+                <h2 className="text-xl font-bold text-white">AI Portfolio Assistant</h2>
+                <p className="text-white/70 text-sm">Powered by advanced AI analysis</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 bg-white/15 hover:bg-white/25 rounded-full flex items-center justify-center transition-all duration-150 border border-white/25 focus:outline-none focus:ring-2 focus:ring-white/60"
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/30"
             >
               <X className="h-5 w-5 text-white" />
             </button>
@@ -193,45 +136,63 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
         </div>
 
         {/* Content */}
-        <div className="grid grid-cols-[20rem_1fr] h-[calc(100%-56px)] divide-x divide-white/10">
+        <div className="flex h-[600px]">
           {/* Services Sidebar */}
-          <aside className="bg-white/5 p-5 overflow-y-auto">
-            <div className="flex flex-col gap-3">
-              {services.map((s) => (
-                <ServiceItem
-                  key={s.id}
-                  id={s.id}
-                  icon={s.icon}
-                  title={s.title}
-                  description={s.description}
-                  selected={activeService === s.id}
+          <div className="w-80 bg-white/5 border-r border-white/20 p-4 overflow-y-auto">
+            <h3 className="text-lg font-semibold text-white mb-4">AI Services</h3>
+            <div className="space-y-3">
+              {services.map((service) => (
+                <button
+                  key={service.id}
+                  onClick={() => {
+                    setActiveService(service.id);
+                    service.action();
+                  }}
                   disabled={loading}
-                  onClick={() => { setActiveService(s.id); s.action(); }}
-                />
+                  className={`w-full p-4 rounded-xl border transition-all duration-200 text-left group ${
+                    activeService === service.id
+                      ? 'bg-white/15 border-white/30'
+                      : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className={`w-10 h-10 bg-gradient-to-r ${service.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <service.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-semibold text-white text-sm group-hover:text-cyan-200 transition-colors">
+                        {service.title}
+                      </h4>
+                      <p className="text-white/60 text-xs mt-1 leading-relaxed">
+                        {service.description}
+                      </p>
+                    </div>
+                  </div>
+                </button>
               ))}
             </div>
 
             {(response || conversationHistory.length > 0) && (
-              <div className="mt-6 pt-4 border-t border-white/12">
+              <div className="mt-6 pt-4 border-t border-white/20">
                 <button
                   onClick={resetConversation}
-                  className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-all duration-150 border border-white/20"
+                  className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-all duration-200 border border-white/20"
                 >
                   Start New Conversation
                 </button>
               </div>
             )}
-          </aside>
+          </div>
 
           {/* Response Area */}
-          <section className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col">
             <div className="flex-1 p-6 overflow-y-auto">
               {!response && !loading && (
                 <div className="h-full flex items-center justify-center">
-                  <div className="text-center max-w-xl mx-auto">
+                  <div className="text-center">
                     <Brain className="h-16 w-16 text-white/40 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">AI Portfolio Assistant</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">
+                    <h3 className="text-xl font-semibold text-white mb-2">AI Portfolio Assistant</h3>
+                    <p className="text-white/60 max-w-md">
                       Select an AI service from the sidebar to get personalized insights about your portfolio.
                       I can help you understand your performance, optimize your allocation, and identify tax opportunities.
                     </p>
@@ -247,15 +208,17 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
                       key={index}
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[80%] p-4 rounded-2xl border ${
-                        message.type === 'user'
-                          ? 'bg-blue-500/15 border-blue-400/30'
-                          : 'bg-white/10 border-white/20'
-                      } shadow-[0_6px_18px_rgba(0,0,0,0.25)]`}>
+                      <div
+                        className={`max-w-[80%] p-4 rounded-2xl ${
+                          message.type === 'user'
+                            ? 'bg-blue-500/20 border border-blue-400/30'
+                            : 'bg-white/10 border border-white/20'
+                        }`}
+                      >
                         {message.type === 'ai' && message.service && (
-                          <div className="flex items-center space-x-2 mb-2 pb-2 border-b border-white/12">
+                          <div className="flex items-center space-x-2 mb-2 pb-2 border-b border-white/20">
                             <MessageCircle className="h-4 w-4 text-blue-400" />
-                            <span className="text-blue-400 text-xs font-medium">{message.service}</span>
+                            <span className="text-blue-400 text-sm font-medium">{message.service}</span>
                           </div>
                         )}
                         <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
@@ -272,7 +235,7 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <Loader className="h-8 w-8 text-blue-400 animate-spin mx-auto mb-4" />
-                    <p className="text-white/80">Analyzing your portfolio...</p>
+                    <p className="text-white/70">Analyzing your portfolio...</p>
                   </div>
                 </div>
               )}
@@ -280,20 +243,19 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
 
             {/* Follow-up Question Input */}
             {response && !loading && (
-              <div className="p-4 border-t border-white/12 bg-white/5">
+              <div className="p-4 border-t border-white/20 bg-white/5">
                 <form onSubmit={handleFollowUpQuestion} className="flex space-x-3">
                   <input
                     type="text"
                     value={followUpQuestion}
                     onChange={(e) => setFollowUpQuestion(e.target.value)}
                     placeholder="Ask a follow-up question about your portfolio..."
-                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-neon-blue)]/50 focus:border-transparent"
+                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent"
                   />
                   <button
                     type="submit"
                     disabled={!followUpQuestion.trim() || loading}
-                    className="px-6 py-3 rounded-xl text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center space-x-2 shadow-[0_6px_16px_rgba(0,0,0,0.25)]"
-                    style={{ background: 'linear-gradient(135deg,var(--color-neon-purple),var(--color-neon-blue))' }}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2"
                   >
                     <Send className="h-4 w-4" />
                     <span>Ask</span>
@@ -301,7 +263,7 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
                 </form>
               </div>
             )}
-          </section>
+          </div>
         </div>
       </div>
     </div>

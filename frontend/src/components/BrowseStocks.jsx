@@ -1,31 +1,32 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Search } from "lucide-react";
 import debounce from "lodash/debounce";
 import { FixedSizeGrid as Grid } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { 
   searchSymbolsPaged, 
-  discoverSymbolsPaged,
+  discoverSymbolsPaged,  // NEW: for preload feed
   fetchQuotesBatch, 
   fetchStockBySymbol 
 } from "../services/api";
 
-const IDEAL_CARD_W = 280;
-const CARD_H = 240;
+const IDEAL_CARD_W = 320;
+const CARD_H = 280;
 const GAP = 24;
 const GRID_MAX_HEIGHT = 600;
 
 const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
-  // Double-buffer approach to prevent flicker
-  const [symbols, setSymbols] = useState([]);           // source of truth for paging
-  const [viewSymbols, setViewSymbols] = useState([]);   // what the Grid renders
-  const [cursor, setCursor] = useState(null);
+  // MODE: 'feed' (no search) vs 'search'
+  const [mode, setMode] = useState("feed");
+
+  // Paged symbols (shared by both modes)
+  const [symbols, setSymbols] = useState([]);        // [{symbol,name,sector}]
+  const [cursor, setCursor] = useState(null);        // server/client cursor
   const [hasMore, setHasMore] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const searchVersionRef = useRef(0);
+  const [loadingSymbols, setLoadingSymbols] = useState(false);
 
   // Quotes cache + status
-  const detailsCache = useRef(new Map());
+  const detailsCache = useRef(new Map());            // symbol -> details
   const [loadingDetailsMap, setLoadingDetailsMap] = useState(new Map());
   const [errorDetailsMap, setErrorDetailsMap] = useState(new Map());
 
@@ -33,107 +34,97 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
   const detailsQueue = useRef([]);
   const processingQueue = useRef(false);
 
-  // Use deferred value to prevent typing spikes
-  const deferredQuery = useDeferredValue(searchQuery);
-
   // --- Helpers ---
-  const resetCache = useCallback(() => {
+  const resetLists = useCallback(() => {
+    setSymbols([]);
+    setCursor(null);
+    setHasMore(false);
+    setLoadingSymbols(false);
     detailsCache.current.clear();
     setLoadingDetailsMap(new Map());
     setErrorDetailsMap(new Map());
   }, []);
 
-  // Double-buffer search with version guard
-  const debouncedSearch = useMemo(() =>
-    debounce(async (q) => {
-      const query = (q || "").trim();
-      const version = ++searchVersionRef.current;
-      setIsSearching(true);
-
-      try {
-        resetCache(); // Clear quote cache for new search
-        
-        if (!query) {
-          // Load default feed
-          const { items, nextCursor } = await discoverSymbolsPaged({ cursor: null, limit: 100 });
-          if (searchVersionRef.current !== version) return; // stale
-          setSymbols(items);
-          setViewSymbols(items);  // swap when ready (no flash)
-          setCursor(nextCursor);
-          setHasMore(!!nextCursor);
-        } else {
-          // Search for symbols
-          const { items, nextCursor } = await searchSymbolsPaged({ q: query, cursor: null, limit: 500 });
-          if (searchVersionRef.current !== version) return; // stale
-          
-          // Keep empty results as empty - don't fall back to discovery
-          setSymbols(items); // Could be empty array
-          setViewSymbols(items); // Could be empty array
-          setCursor(nextCursor);
-          setHasMore(!!nextCursor);
-        }
-      } catch (error) {
-        console.error('Search error:', error);
-        // On error, show empty results for search queries
-        if (query) {
-          setSymbols([]);
-          setViewSymbols([]);
-          setCursor(null);
-          setHasMore(false);
-        }
-      } finally {
-        if (searchVersionRef.current === version) setIsSearching(false);
-      }
-    }, 250),
-  [resetCache]);
-
-  // Load more symbols for pagination
-  const loadMoreSymbols = useCallback(async () => {
-    if (isSearching || !hasMore) return;
-    
+  const loadMoreFeed = useCallback(async (cur = null) => {
+    if (loadingSymbols) return;
+    setLoadingSymbols(true);
     try {
-      const query = (deferredQuery || "").trim();
-      let result;
-      
-      if (!query) {
-        result = await discoverSymbolsPaged({ cursor, limit: 100 });
-      } else {
-        // For search queries, only load more if we already have results
-        if (symbols.length === 0) return; // Don't load more if no initial results
-        result = await searchSymbolsPaged({ q: query, cursor, limit: 500 });
-      }
-      
-      const newSymbols = [...symbols, ...result.items];
-      setSymbols(newSymbols);
-      setViewSymbols(newSymbols);
-      setCursor(result.nextCursor);
-      setHasMore(!!result.nextCursor);
+      console.log('Loading feed with cursor:', cur);
+      const { items, nextCursor } = await discoverSymbolsPaged({ cursor: cur, limit: 100 }); // Reduced to 100 for faster loading
+      console.log('Feed loaded:', items.length, 'items');
+      setSymbols(prev => [...prev, ...items]);
+      setCursor(nextCursor);
+      setHasMore(!!nextCursor);
     } catch (error) {
-      console.error('Load more error:', error);
+      console.error('Error loading feed:', error);
+    } finally {
+      setLoadingSymbols(false);
     }
-  }, [isSearching, hasMore, cursor, symbols, deferredQuery]);
+  }, [loadingSymbols]);
 
-  // Initial load - only when truly empty (no search query)
-  useEffect(() => {
-    const hasQuery = (deferredQuery || "").trim().length > 0;
-    if (viewSymbols.length === 0 && !isSearching && !hasQuery) {
-      debouncedSearch("");
+  const loadMoreSearch = useCallback(async (q, cur = null) => {
+    if (loadingSymbols) return;
+    setLoadingSymbols(true);
+    try {
+      const { items, nextCursor } = await searchSymbolsPaged({ q, cursor: cur, limit: 500 });
+      setSymbols(prev => [...prev, ...items]);
+      setCursor(nextCursor);
+      setHasMore(!!nextCursor);
+    } finally {
+      setLoadingSymbols(false);
     }
-  }, [viewSymbols.length, isSearching, deferredQuery, debouncedSearch]);
+  }, [loadingSymbols]);
+
+  // Switch mode on query changes
+  const debouncedSearchSwitch = useMemo(() =>
+    debounce(async (q) => {
+      const qtrim = (q || "").trim();
+      const newMode = qtrim ? "search" : "feed";
+      
+      // Only reset if mode actually changes
+      if (mode !== newMode) {
+        setMode(newMode);
+        
+        // Don't clear symbols immediately to prevent flicker
+        setLoadingSymbols(true);
+        
+        if (newMode === "feed") {
+          resetLists();
+          await loadMoreFeed(null);          // PRELOAD first page
+        } else {
+          resetLists();
+          await loadMoreSearch(qtrim, null); // PRELOAD first search page
+        }
+      } else if (newMode === "search") {
+        // Same search mode but different query - show loading but keep old results briefly
+        setLoadingSymbols(true);
+        resetLists();
+        await loadMoreSearch(qtrim, null);
+      }
+    }, 300),
+  [resetLists, loadMoreFeed, loadMoreSearch, mode]);
+
+  // Load initial feed on component mount
+  useEffect(() => {
+    if (symbols.length === 0 && !loadingSymbols && mode === "feed" && !searchQuery) {
+      loadMoreFeed(null);
+    }
+  }, [symbols.length, loadingSymbols, mode, searchQuery, loadMoreFeed]);
 
   useEffect(() => {
-    debouncedSearch(deferredQuery);
-    return () => debouncedSearch.cancel();
-  }, [deferredQuery, debouncedSearch]);
+    debouncedSearchSwitch(searchQuery);
+    return () => debouncedSearchSwitch.cancel();
+  }, [searchQuery, debouncedSearchSwitch]);
 
   // Batch-process visible queue
   const processDetailsQueue = useCallback(async () => {
     if (processingQueue.current || detailsQueue.current.length === 0) return;
     processingQueue.current = true;
-    const BATCH_SIZE = 10;
+    const BATCH_SIZE = 10; // Reduced batch size for better performance
 
     while (detailsQueue.current.length > 0) {
       const batch = detailsQueue.current.splice(0, BATCH_SIZE);
+      console.log('Processing batch of', batch.length, 'symbols:', batch);
       
       setLoadingDetailsMap(prev => {
         const next = new Map(prev);
@@ -142,11 +133,13 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
       });
 
       try {
-        const quotes = await fetchQuotesBatch(batch);
+        const quotes = await fetchQuotesBatch(batch); // {SYM: details}
+        console.log('Received quotes for:', Object.keys(quotes));
         
         // cache successes
         Object.entries(quotes).forEach(([sym, det]) => {
           if (det) {
+            console.log('Caching quote for', sym, det);
             detailsCache.current.set(sym, det);
           }
         });
@@ -154,6 +147,7 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
         // mark missing as error
         const missing = batch.filter(s => !quotes[s]);
         if (missing.length) {
+          console.log('Missing quotes for:', missing);
           setErrorDetailsMap(prev => {
             const next = new Map(prev);
             missing.forEach(s => next.set(s, true));
@@ -176,11 +170,49 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
         });
       }
 
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 500)); // Increased delay to reduce API pressure
     }
 
     processingQueue.current = false;
   }, []);
+
+  // react-window helpers - removed rowCount and gridHeight as they'll be computed in render
+
+  // Queue visible symbols + page more when near bottom
+  const onItemsRendered = useCallback(({ visibleRowStartIndex, visibleRowStopIndex, columnCount }) => {
+    const startIndex = visibleRowStartIndex * columnCount;
+    const endIndex = Math.min(symbols.length - 1, (visibleRowStopIndex + 1) * columnCount - 1);
+
+    // queue quotes for visible symbols
+    for (let i = startIndex; i <= endIndex; i++) {
+      const sym = symbols[i]?.symbol;
+      if (!sym) continue;
+      if (
+        !detailsCache.current.has(sym) &&
+        !loadingDetailsMap.get(sym) &&
+        !errorDetailsMap.get(sym) &&
+        !detailsQueue.current.includes(sym)
+      ) {
+        detailsQueue.current.push(sym);
+      }
+    }
+    if (detailsQueue.current.length) processDetailsQueue();
+
+    // page more symbols when near the end
+    const rowCount = Math.ceil(symbols.length / columnCount);
+    const BUFFER_ROWS = 2;
+    const thresholdIndex = (rowCount - BUFFER_ROWS) * columnCount;
+    if (hasMore && endIndex >= thresholdIndex && !loadingSymbols) {
+      if (mode === "feed") {
+        loadMoreFeed(cursor);
+      } else {
+        loadMoreSearch((searchQuery || "").trim(), cursor);
+      }
+    }
+  }, [
+    symbols, loadingDetailsMap, errorDetailsMap, processDetailsQueue,
+    hasMore, loadingSymbols, mode, loadMoreFeed, loadMoreSearch, searchQuery, cursor
+  ]);
 
   // Click a card: ensure details, fallback to single fetch
   const handleCardClick = useCallback(async (item) => {
@@ -207,40 +239,9 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
     });
   }, [setSelectedStock]);
 
-  const onItemsRendered = useCallback(({ visibleRowStartIndex, visibleRowStopIndex, columnCount }) => {
-    const startIndex = visibleRowStartIndex * columnCount;
-    const endIndex = Math.min(viewSymbols.length - 1, (visibleRowStopIndex + 1) * columnCount - 1);
-
-    // queue quotes for visible symbols
-    for (let i = startIndex; i <= endIndex; i++) {
-      const sym = viewSymbols[i]?.symbol;
-      if (!sym) continue;
-      if (
-        !detailsCache.current.has(sym) &&
-        !loadingDetailsMap.get(sym) &&
-        !errorDetailsMap.get(sym) &&
-        !detailsQueue.current.includes(sym)
-      ) {
-        detailsQueue.current.push(sym);
-      }
-    }
-    if (detailsQueue.current.length) processDetailsQueue();
-
-    // page more symbols when near the end
-    const rowCount = Math.ceil(viewSymbols.length / columnCount);
-    const BUFFER_ROWS = 2;
-    const thresholdIndex = (rowCount - BUFFER_ROWS) * columnCount;
-    if (hasMore && endIndex >= thresholdIndex && !isSearching) {
-      loadMoreSymbols();
-    }
-  }, [
-    viewSymbols, loadingDetailsMap, errorDetailsMap, processDetailsQueue,
-    hasMore, isSearching, loadMoreSymbols
-  ]);
-
   return (
     <div className="dashboard-grid-2025">
-      {/* Search Header */}
+      {/* Search Header (unchanged) */}
       <div style={{ gridColumn: 'span 12' }}>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ position: 'relative', flex: 1 }}>
@@ -257,40 +258,41 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
               <Search style={{ width: '20px', height: '20px', color: 'rgba(255, 255, 255, 0.6)' }} />
               <input
                 type="text"
-                placeholder="Search symbols (e.g. AAPL, TSLA, MSFT)..."
+                placeholder="Search stocks by symbol or name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ 
-                  background: 'transparent', 
-                  border: 'none', 
-                  outline: 'none', 
-                  flex: 1, 
-                  color: '#ffffff', 
-                  fontSize: '16px' 
-                }}
+                style={{ background: 'transparent', border: 'none', outline: 'none', flex: 1, color: '#ffffff', fontSize: '16px' }}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Virtualized Grid */}
+      {/* Grid (UI classes unchanged) */}
       <div className="card-2025" style={{ gridColumn: 'span 12' }}>
-        <div className="movers-grid-2025" style={{ 
-          maxHeight: `${GRID_MAX_HEIGHT}px`, 
-          overflowY: 'auto',
-          position: 'relative'
-        }}>
-          <div style={{ height: GRID_MAX_HEIGHT }}>
-            <AutoSizer>
-              {({ width, height }) => {
-                const columnCount = Math.max(1, Math.floor((width + GAP) / (IDEAL_CARD_W + GAP)));
-                const columnWidth = Math.floor((width - (columnCount - 1) * GAP) / columnCount);
-                const rowCount = Math.max(1, Math.ceil((viewSymbols.length || 1) / columnCount));
-                const actualHeight = Math.min(height, GRID_MAX_HEIGHT);
+        <div className="movers-grid-2025" style={{ maxHeight: `${GRID_MAX_HEIGHT}px`, overflowY: 'auto' }}>
+          {symbols.length === 0 && !loadingSymbols ? (
+            <div className="mover-card-2025" style={{ gridColumn: 'span 3', textAlign: 'center', opacity: 0.7 }}>
+              <div className="mover-header-2025"><span className="mover-symbol-2025">---</span></div>
+              <div className="mover-price-2025">Start searching</div>
+              <div className="mover-name-2025">Enter a company name or symbol</div>
+            </div>
+          ) : (symbols.length === 0 && loadingSymbols) ? (
+            <div className="mover-card-2025" style={{ gridColumn: 'span 3', textAlign: 'center', opacity: 0.7 }}>
+              <div className="mover-header-2025"><span className="mover-symbol-2025">...</span></div>
+              <div className="mover-price-2025">Loading...</div>
+              <div className="mover-name-2025">Please wait</div>
+            </div>
+          ) : (
+            <div style={{ height: GRID_MAX_HEIGHT }}>
+              <AutoSizer>
+                {({ width, height }) => {
+                  const columnCount = Math.max(1, Math.floor((width + GAP) / (IDEAL_CARD_W + GAP)));
+                  const columnWidth = Math.floor((width - (columnCount - 1) * GAP) / columnCount);
+                  const rowCount = Math.ceil(symbols.length / columnCount);
+                  const actualHeight = Math.min(height, GRID_MAX_HEIGHT);
 
-                return (
-                  <>
+                  return (
                     <Grid
                       columnCount={columnCount}
                       rowCount={rowCount}
@@ -303,40 +305,13 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
                     >
                       {({ columnIndex, rowIndex, style }) => {
                         const index = rowIndex * columnCount + columnIndex;
-                        const item = viewSymbols[index];
+                        const item = symbols[index];
                         
-                        // Show loading/empty state in first cell only
-                        if (index === 0 && viewSymbols.length === 0) {
-                          const hasSearchQuery = (deferredQuery || "").trim().length > 0;
-                          return (
-                            <div className="vw-cell-outer" style={style}>
-                              <div className="vw-cell-pad">
-                                <div className="mover-card-2025" style={{ textAlign: 'center', opacity: 0.7 }}>
-                                  <div className="mover-header-2025">
-                                    <span className="mover-symbol-2025">
-                                      {isSearching ? '...' : (hasSearchQuery ? '❌' : '---')}
-                                    </span>
-                                  </div>
-                                  <div className="mover-price-2025">
-                                    {isSearching ? 'Searching...' : 
-                                     hasSearchQuery ? 'No matches found' : 'Start searching'}
-                                  </div>
-                                  <div className="mover-name-2025">
-                                    {isSearching ? 'Please wait' : 
-                                     hasSearchQuery ? 'Try a different symbol' : 'Enter a symbol (e.g. AAPL)'}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }
-                        
-                        // Empty placeholder cells
                         if (!item) {
                           return (
                             <div className="vw-cell-outer" style={style}>
                               <div className="vw-cell-pad">
-                                <div className="mover-card-2025" style={{ opacity: 0.1 }} />
+                                <div className="mover-card-2025" style={{ opacity: 0.4 }} />
                               </div>
                             </div>
                           );
@@ -353,15 +328,8 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
                               <div 
                                 className="mover-card-2025" 
                                 onClick={() => handleCardClick(item)}
-                                tabIndex={0}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    handleCardClick(item);
-                                  }
-                                }}
                                 style={{ 
-                                  opacity: isSearching ? 0.8 : 1,
+                                  opacity: loadingSymbols ? 0.6 : 1,
                                   transition: 'opacity 0.2s ease'
                                 }}
                               >
@@ -370,87 +338,31 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
                                   {details ? (
                                     <span className={`mover-change-2025 ${details.change >= 0 ? 'positive-2025' : 'negative-2025'}`}>
                                       {details.changePercent ? 
-                                        `${details.changePercent >= 0 ? '+' : ''}${details.changePercent.toFixed(2)}%` :
-                                        details.price > 0 ? `${details.change >= 0 ? '+' : ''}${((details.change / details.price) * 100).toFixed(2)}%` : '--'
+                                        `${details.changePercent.toFixed(2)}%` :
+                                        details.price > 0 ? `${((details.change / details.price) * 100).toFixed(2)}%` : '--'
                                       }
                                     </span>
                                   ) : isError ? (
-                                    <span className="mover-change-2025" style={{ 
-                                      backgroundColor: 'rgba(255,255,255,0.1)', 
-                                      color: 'var(--text-dim)',
-                                      fontSize: '10px',
-                                      padding: '2px 6px',
-                                      borderRadius: '8px'
-                                    }}>ERR</span>
+                                    <span className="mover-change-2025">ERR</span>
                                   ) : (
-                                    <div className="mover-loading-skeleton" style={{ width: '40px', height: '16px' }}></div>
+                                    <span className="mover-change-2025">--</span>
                                   )}
                                 </div>
                                 <div className="mover-price-2025">
-                                  {details ? 
-                                    `$${details.price?.toFixed(2) || '0.00'}` : 
-                                    isLoading ? 
-                                      <div className="mover-loading-skeleton" style={{ width: '80px', height: '26px' }}></div> : 
-                                      '—'
-                                  }
+                                  {details ? `$${details.price?.toFixed(2) || '0.00'}` : (isLoading ? 'Loading…' : '—')}
                                 </div>
-                                <div className="mover-name-2025">
-                                  {isLoading && !details ? 
-                                    <div className="mover-loading-skeleton" style={{ width: '100%', height: '13px', marginBottom: '4px' }}></div> :
-                                    item.name
-                                  }
-                                </div>
+                                <div className="mover-name-2025">{item.name}</div>
                               </div>
                             </div>
                           </div>
                         );
                       }}
                     </Grid>
-                    
-                    {/* Non-blocking search overlay */}
-                    {isSearching && (
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        backdropFilter: 'blur(2px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '16px',
-                        zIndex: 10
-                      }}>
-                        <div style={{
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          backdropFilter: 'blur(20px)',
-                          padding: '16px 24px',
-                          borderRadius: '100px',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          color: 'white'
-                        }}>
-                          <div style={{
-                            width: '16px',
-                            height: '16px',
-                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                            borderTop: '2px solid white',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite'
-                          }} />
-                          <span>Searching...</span>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                );
-              }}
-            </AutoSizer>
-          </div>
+                  );
+                }}
+              </AutoSizer>
+            </div>
+          )}
         </div>
       </div>
     </div>

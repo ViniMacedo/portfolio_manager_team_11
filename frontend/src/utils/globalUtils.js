@@ -90,7 +90,7 @@ export const formatLargeNumber = (value, decimals = 1) => {
  * @returns {number} Number of shares
  */
 export const getShares = (stock) => {
-  return Number(stock?.shares || stock?.quantity || stock?.qty || 0);
+  return Number(stock?.shares || stock?.quantity || 0);
 };
 
 /**

@@ -1,174 +1,62 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { TrendingUp, TrendingDown, BarChart3, Activity, PieChart, Target, DollarSign, Percent, Calendar, AlertTriangle, Brain, Sparkles } from 'lucide-react';
 import { 
   formatCurrency, 
   formatPercentage, 
+  generateAIInsights,
+  calculatePortfolioVolatility,
   getMarketValue,
   getCostBasis,
   getShares,
-  getCurrentPrice
+  getCurrentPrice,
+  calculateStockPerformance
 } from '../utils/globalUtils';
 
 const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
-  // Use REAL portfolio data - no mock calculations
+  // Use real portfolio data passed from parent (same as Overview component)
   const totalValue = portfolioData?.totalValue || 0;
-  const totalInvested = portfolioData?.totalInvested || 0;
   const dayChange = portfolioData?.dayChange || 0;
   const dayChangePercent = portfolioData?.dayChangePercent || 0;
+  const totalInvested = portfolioData?.totalInvested || 0;
+  const totalReturn = totalInvested > 0 ? ((totalValue - totalInvested) / totalInvested) * 100 : 0;
   
-  // Calculate real total return
-  const totalGainLoss = totalValue - totalInvested;
-  const totalReturnPercent = totalInvested > 0 ? ((totalGainLoss / totalInvested) * 100) : 0;
+  // For now, set time-based returns to 0 until we have historical data
+  const dailyReturn = dayChangePercent; // Use real day change
+  const weeklyReturn = 0; // Would come from real API data
+  const monthlyReturn = 0; // Would come from real API data
+  const ytdReturn = totalReturn; // Use actual total return as YTD
+
+  // Calculate portfolio volatility from real holdings data
+  const portfolioVolatility = calculatePortfolioVolatility(portfolio);
   
-  // Real holdings count
-  const holdingsCount = portfolio?.holdings?.length || 0;
+  // Real metrics calculation - no mock data
+  const sharpeRatio = 0; // Would require risk-free rate and historical returns
+  const maxDrawdown = 0; // Would require historical portfolio values
+  const beta = 1.0; // Market neutral until real calculation
+  const dividendYield = 0; // Would come from real dividend data
 
-  // Calculate real portfolio metrics from actual holdings
-  const portfolioMetrics = useMemo(() => {
-    if (!portfolio?.holdings || portfolio.holdings.length === 0) {
-      return {
-        topPerformer: null,
-        worstPerformer: null,
-        largestHolding: null,
-        totalDividendYield: 0,
-        diversificationScore: 0
-      };
-    }
+  // Metrics object for consistency
+  const metrics = { 
+    totalInvested, 
+    currentValue: totalValue, 
+    totalReturn, 
+    dailyReturn,
+    weeklyReturn, 
+    monthlyReturn,
+    ytdReturn, 
+    volatility: portfolioVolatility,
+    sharpeRatio,
+    maxDrawdown,
+    beta,
+    dividendYield
+  };
 
-    let topGain = -Infinity;
-    let worstGain = Infinity;
-    let largestValue = 0;
-    let topPerformer = null;
-    let worstPerformer = null;
-    let largestHolding = null;
+  const { 
+    currentValue, 
+    volatility
+  } = metrics;
 
-    portfolio.holdings.forEach(holding => {
-      const shares = getShares(holding);
-      const currentPrice = getCurrentPrice(holding);
-      const costBasis = getCostBasis(holding);
-      const marketValue = getMarketValue(holding);
-      
-      const gainLoss = marketValue - (shares * costBasis);
-      const gainLossPercent = costBasis > 0 ? ((currentPrice - costBasis) / costBasis * 100) : 0;
-
-      // Track best/worst performers
-      if (gainLossPercent > topGain) {
-        topGain = gainLossPercent;
-        topPerformer = {
-          symbol: holding.symbol,
-          gainPercent: gainLossPercent,
-          gainAmount: gainLoss
-        };
-      }
-
-      if (gainLossPercent < worstGain) {
-        worstGain = gainLossPercent;
-        worstPerformer = {
-          symbol: holding.symbol,
-          gainPercent: gainLossPercent,
-          gainAmount: gainLoss
-        };
-      }
-
-      // Track largest holding by market value
-      if (marketValue > largestValue) {
-        largestValue = marketValue;
-        largestHolding = {
-          symbol: holding.symbol,
-          value: marketValue,
-          percentage: totalValue > 0 ? (marketValue / totalValue * 100) : 0
-        };
-      }
-    });
-
-    // Simple diversification score (inverse of largest holding percentage)
-    const diversificationScore = largestHolding ? Math.max(0, 100 - largestHolding.percentage) : 0;
-
-    return {
-      topPerformer,
-      worstPerformer,
-      largestHolding,
-      totalDividendYield: 0, // Would come from real API
-      diversificationScore
-    };
-  }, [portfolio, totalValue]);
-
-  // Generate meaningful AI insights based on REAL data
-  const aiInsights = useMemo(() => {
-    const insights = [];
-
-    // Portfolio Health Insight
-    if (totalReturnPercent >= 10) {
-      insights.push({
-        type: 'success',
-        icon: '🎯',
-        title: 'Strong Performance',
-        message: `Your portfolio is up ${totalReturnPercent.toFixed(1)}% with total gains of ${formatCurrency(totalGainLoss)}`
-      });
-    } else if (totalReturnPercent >= 0) {
-      insights.push({
-        type: 'info',
-        icon: '📈',
-        title: 'Positive Growth',
-        message: `Portfolio showing ${totalReturnPercent.toFixed(1)}% growth. Total value: ${formatCurrency(totalValue)}`
-      });
-    } else {
-      insights.push({
-        type: 'warning',
-        icon: '⚠️',
-        title: 'Portfolio Down',
-        message: `Portfolio is down ${Math.abs(totalReturnPercent).toFixed(1)}% (${formatCurrency(totalGainLoss)})`
-      });
-    }
-
-    // Diversification Insight
-    if (holdingsCount >= 8) {
-      insights.push({
-        type: 'success',
-        icon: '🌟',
-        title: 'Well Diversified',
-        message: `${holdingsCount} holdings provide good diversification across multiple stocks`
-      });
-    } else if (holdingsCount >= 3) {
-      insights.push({
-        type: 'info',
-        icon: '📊',
-        title: 'Moderate Diversification',
-        message: `${holdingsCount} holdings. Consider adding more stocks for better risk management`
-      });
-    } else if (holdingsCount > 0) {
-      insights.push({
-        type: 'warning',
-        icon: '🎯',
-        title: 'High Concentration',
-        message: `Only ${holdingsCount} holdings. High concentration increases risk`
-      });
-    }
-
-    // Daily Performance Insight
-    if (Math.abs(dayChangePercent) >= 2) {
-      insights.push({
-        type: dayChangePercent > 0 ? 'success' : 'warning',
-        icon: dayChangePercent > 0 ? '🚀' : '📉',
-        title: `${dayChangePercent > 0 ? 'Strong' : 'Notable'} Daily Move`,
-        message: `Portfolio ${dayChangePercent > 0 ? 'gained' : 'lost'} ${Math.abs(dayChangePercent).toFixed(1)}% today (${formatCurrency(dayChange)})`
-      });
-    }
-
-    // Top Performer Insight
-    if (portfolioMetrics.topPerformer && portfolioMetrics.topPerformer.gainPercent > 5) {
-      insights.push({
-        type: 'success',
-        icon: '⭐',
-        title: 'Star Performer',
-        message: `${portfolioMetrics.topPerformer.symbol} is your best performer at +${portfolioMetrics.topPerformer.gainPercent.toFixed(1)}%`
-      });
-    }
-
-    return insights;
-  }, [totalReturnPercent, totalGainLoss, totalValue, holdingsCount, dayChangePercent, dayChange, portfolioMetrics]);
-
-  const currentValue = totalValue;
+  const aiInsights = generateAIInsights(portfolio, { totalValue, totalCost: totalInvested, totalGainPercent: totalReturn });
 
   return (
     <div className="dashboard-grid-2025" style={{gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)'}}>
@@ -192,11 +80,11 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
               ${currentValue.toLocaleString()}
             </div>
             <div className="value-change-2025">
-              <span className={`change-badge-2025 ${totalReturnPercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
-                {totalReturnPercent >= 0 ? '▲' : '▼'} {totalReturnPercent >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%
+              <span className={`change-badge-2025 ${totalReturn >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+                {totalReturn >= 0 ? '▲' : '▼'} {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
               </span>
               <span className="change-amount-2025">
-                {totalGainLoss >= 0 ? '+' : ''}${Math.abs(totalGainLoss).toLocaleString()} Total Return
+                {totalReturn >= 0 ? '+' : ''}${(currentValue - totalInvested).toLocaleString()} Total Return
               </span>
             </div>
           </div>
@@ -297,19 +185,19 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
           <svg style={{position: 'absolute', inset: '20px', width: 'calc(100% - 40px)', height: 'calc(100% - 40px)', opacity: 0.7}} viewBox="0 0 300 200">
             <defs>
               <linearGradient id="performanceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style={{stopColor: totalReturnPercent >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', stopOpacity: 0.3}} />
-                <stop offset="100%" style={{stopColor: totalReturnPercent >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', stopOpacity: 0.05}} />
+                <stop offset="0%" style={{stopColor: totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', stopOpacity: 0.3}} />
+                <stop offset="100%" style={{stopColor: totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', stopOpacity: 0.05}} />
               </linearGradient>
             </defs>
             <path
-              d={`M 10 ${150 + (totalReturnPercent * -0.5)} Q 50 ${140 + (dayChangePercent * -2)} 80 ${135 + (dayChangePercent * -1)} T 150 ${130 + (totalReturnPercent * -0.5)} Q 200 ${125 + (totalReturnPercent * -0.3)} 250 ${120 + (totalReturnPercent * -0.5)} T 290 ${115 + (totalReturnPercent * -0.4)}`}
-              stroke={totalReturnPercent >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)'}
+              d={`M 10 ${150 + (totalReturn * -0.5)} Q 50 ${140 + (dailyReturn * -2)} 80 ${135 + (weeklyReturn * -1)} T 150 ${130 + (monthlyReturn * -1)} Q 200 ${125 + (ytdReturn * -0.3)} 250 ${120 + (totalReturn * -0.5)} T 290 ${115 + (totalReturn * -0.4)}`}
+              stroke={totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)'}
               strokeWidth="2"
               fill="none"
               style={{filter: 'drop-shadow(0 0 4px currentColor)'}}
             />
             <path
-              d={`M 10 ${150 + (totalReturnPercent * -0.5)} Q 50 ${140 + (dayChangePercent * -2)} 80 ${135 + (dayChangePercent * -1)} T 150 ${130 + (totalReturnPercent * -0.5)} Q 200 ${125 + (totalReturnPercent * -0.3)} 250 ${120 + (totalReturnPercent * -0.5)} T 290 ${115 + (totalReturnPercent * -0.4)} L 290 200 L 10 200 Z`}
+              d={`M 10 ${150 + (totalReturn * -0.5)} Q 50 ${140 + (dailyReturn * -2)} 80 ${135 + (weeklyReturn * -1)} T 150 ${130 + (monthlyReturn * -1)} Q 200 ${125 + (ytdReturn * -0.3)} 250 ${120 + (totalReturn * -0.5)} T 290 ${115 + (totalReturn * -0.4)} L 290 200 L 10 200 Z`}
               fill="url(#performanceGradient)"
             />
           </svg>
@@ -328,8 +216,8 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
           {/* Performance Indicator */}
           <div style={{position: 'absolute', top: '20px', right: '20px', background: 'rgba(0, 0, 0, 0.4)', padding: '8px 12px', borderRadius: '6px', backdropFilter: 'blur(10px)'}}>
             <div style={{fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)'}}>Total Return</div>
-            <div style={{fontSize: '18px', fontWeight: 'bold', color: totalReturnPercent >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', fontFamily: 'JetBrains Mono, monospace'}}>
-              {totalReturnPercent >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%
+            <div style={{fontSize: '18px', fontWeight: 'bold', color: totalReturn >= 0 ? 'var(--color-neon-green)' : 'var(--color-neon-red)', fontFamily: 'JetBrains Mono, monospace'}}>
+              {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
             </div>
           </div>
         </div>
@@ -431,35 +319,35 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
       <div className="card-2025" style={{gridColumn: 'span 6', padding: 'var(--space-lg)'}}>
         <h3 style={{fontSize: 'var(--text-base)', marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '6px'}}>
           <Calendar size={18} />
-          Real Performance Data
+          Period Returns
         </h3>
         
         <div className="stats-grid-2025" style={{gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-sm)'}}>
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Today's Change</div>
-            <div className={`stat-value-2025 ${dayChangePercent >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
-              {dayChangePercent >= 0 ? '+' : ''}{dayChangePercent.toFixed(2)}%
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>1 Day</div>
+            <div className={`stat-value-2025 ${dailyReturn >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
+              {dailyReturn >= 0 ? '+' : ''}{dailyReturn.toFixed(2)}%
             </div>
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Total Return</div>
-            <div className={`stat-value-2025 ${totalReturnPercent >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
-              {totalReturnPercent >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>1 Week</div>
+            <div className={`stat-value-2025 ${weeklyReturn >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
+              {weeklyReturn >= 0 ? '+' : ''}{weeklyReturn.toFixed(2)}%
             </div>
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Holdings Count</div>
-            <div className="stat-value-2025 text-gradient-blue" style={{fontSize: 'var(--text-sm)'}}>
-              {holdingsCount}
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>1 Month</div>
+            <div className={`stat-value-2025 ${monthlyReturn >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
+              {monthlyReturn >= 0 ? '+' : ''}{monthlyReturn.toFixed(2)}%
             </div>
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Portfolio Value</div>
-            <div className="stat-value-2025 text-gradient-green" style={{fontSize: 'var(--text-sm)'}}>
-              ${totalValue.toLocaleString()}
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>YTD</div>
+            <div className={`stat-value-2025 ${ytdReturn >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
+              {ytdReturn >= 0 ? '+' : ''}{ytdReturn.toFixed(2)}%
             </div>
           </div>
         </div>
@@ -467,42 +355,36 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
 
       <div className="card-2025" style={{gridColumn: 'span 6', padding: 'var(--space-lg)'}}>
         <h3 style={{fontSize: 'var(--text-base)', marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '6px'}}>
-          <Target size={18} />
-          Portfolio Insights
+          <AlertTriangle size={18} />
+          Risk Analysis
         </h3>
         
         <div className="stats-grid-2025" style={{gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-sm)'}}>
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Best Performer</div>
-            <div className="stat-value-2025 positive-2025" style={{fontSize: 'var(--text-sm)'}}>
-              {portfolioMetrics.topPerformer ? 
-                `${portfolioMetrics.topPerformer.symbol} (+${portfolioMetrics.topPerformer.gainPercent.toFixed(1)}%)` : 
-                'N/A'}
-            </div>
-          </div>
-          
-          <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Worst Performer</div>
-            <div className="stat-value-2025 negative-2025" style={{fontSize: 'var(--text-sm)'}}>
-              {portfolioMetrics.worstPerformer ? 
-                `${portfolioMetrics.worstPerformer.symbol} (${portfolioMetrics.worstPerformer.gainPercent.toFixed(1)}%)` : 
-                'N/A'}
-            </div>
-          </div>
-          
-          <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Largest Holding</div>
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Volatility</div>
             <div className="stat-value-2025 text-gradient-purple" style={{fontSize: 'var(--text-sm)'}}>
-              {portfolioMetrics.largestHolding ? 
-                `${portfolioMetrics.largestHolding.symbol} (${portfolioMetrics.largestHolding.percentage.toFixed(1)}%)` : 
-                'N/A'}
+              {volatility.toFixed(2)}%
             </div>
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Gain/Loss Amount</div>
-            <div className={`stat-value-2025 ${totalGainLoss >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
-              {totalGainLoss >= 0 ? '+' : ''}${Math.abs(totalGainLoss).toLocaleString()}
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Sharpe Ratio</div>
+            <div className="stat-value-2025 text-gradient-blue" style={{fontSize: 'var(--text-sm)'}}>
+              {sharpeRatio.toFixed(2)}
+            </div>
+          </div>
+          
+          <div className="stat-item-2025">
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Max Drawdown</div>
+            <div className="stat-value-2025 negative-2025" style={{fontSize: 'var(--text-sm)'}}>
+              -{maxDrawdown.toFixed(2)}%
+            </div>
+          </div>
+          
+          <div className="stat-item-2025">
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Beta</div>
+            <div className="stat-value-2025 text-gradient-green" style={{fontSize: 'var(--text-sm)'}}>
+              {beta.toFixed(2)}
             </div>
           </div>
         </div>
@@ -531,30 +413,40 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Holdings Count</div>
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Holdings</div>
             <div className="stat-value-2025 text-gradient-purple" style={{fontSize: 'var(--text-sm)'}}>
               {portfolio?.holdings?.length || 0}
             </div>
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Total Return</div>
-            <div className={`stat-value-2025 ${totalReturnPercent >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
-              {totalReturnPercent >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Avg. Dividend</div>
+            <div className="stat-value-2025 text-gradient-green" style={{fontSize: 'var(--text-sm)'}}>
+              {dividendYield.toFixed(2)}%
             </div>
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Today's Change</div>
-            <div className={`stat-value-2025 ${dayChangePercent >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
-              {dayChangePercent >= 0 ? '+' : ''}{dayChangePercent.toFixed(2)}%
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Best Performer</div>
+            <div className="stat-value-2025 positive-2025" style={{fontSize: 'var(--text-sm)'}}>
+              {portfolio?.holdings?.length > 0 ? (() => {
+                // Find actual best performer by gain/loss percentage
+                const sortedHoldings = [...portfolio.holdings].sort((a, b) => {
+                  const { gainLossPercent: perfA } = calculateStockPerformance(a);
+                  const { gainLossPercent: perfB } = calculateStockPerformance(b);
+                  return perfB - perfA;
+                });
+                const bestPerformer = sortedHoldings[0];
+                const { gainLossPercent } = calculateStockPerformance(bestPerformer);
+                return `${bestPerformer.symbol || 'N/A'} (+${gainLossPercent.toFixed(1)}%)`;
+              })() : 'N/A'}
             </div>
           </div>
           
           <div className="stat-item-2025">
-            <div className="stat-label-2025" style={{fontSize: '11px'}}>Gain/Loss</div>
-            <div className={`stat-value-2025 ${totalGainLoss >= 0 ? 'positive-2025' : 'negative-2025'}`} style={{fontSize: 'var(--text-sm)'}}>
-              {totalGainLoss >= 0 ? '+' : ''}${Math.abs(totalGainLoss).toLocaleString()}
+            <div className="stat-label-2025" style={{fontSize: '11px'}}>Portfolio Beta</div>
+            <div className="stat-value-2025 text-gradient-blue" style={{fontSize: 'var(--text-sm)'}}>
+              {beta.toFixed(2)}
             </div>
           </div>
         </div>
@@ -564,29 +456,16 @@ const Analytics = ({ portfolio, portfolioData, setSelectedStock }) => {
           <div className="movers-grid-2025" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-md)'}}>
             {portfolio.holdings
               .sort((a, b) => {
-                // Calculate performance directly
-                const sharesA = getShares(a);
-                const currentPriceA = getCurrentPrice(a);
-                const costBasisA = getCostBasis(a);
-                const perfA = costBasisA > 0 ? ((currentPriceA - costBasisA) / costBasisA * 100) : 0;
-                
-                const sharesB = getShares(b);
-                const currentPriceB = getCurrentPrice(b);
-                const costBasisB = getCostBasis(b);
-                const perfB = costBasisB > 0 ? ((currentPriceB - costBasisB) / costBasisB * 100) : 0;
-                
+                const { gainLossPercent: perfA } = calculateStockPerformance(a);
+                const { gainLossPercent: perfB } = calculateStockPerformance(b);
                 return perfB - perfA;
               })
               .map((stock, index) => {
                 const marketValue = getMarketValue(stock);
+                const costBasis = getCostBasis(stock);
+                const { gainLoss: totalGainLoss, gainLossPercent } = calculateStockPerformance(stock);
                 const shares = getShares(stock);
                 const currentPrice = getCurrentPrice(stock);
-                const costBasis = getCostBasis(stock);
-                
-                // Calculate gain/loss directly
-                const totalCost = shares * costBasis;
-                const totalGainLoss = marketValue - totalCost;
-                const gainLossPercent = costBasis > 0 ? ((currentPrice - costBasis) / costBasis * 100) : 0;
                 const isPositive = totalGainLoss >= 0;
                 
                 return (

@@ -3,7 +3,7 @@ import React from 'react';
 import { Brain, Search, Bell, Settings, Sparkles, BarChart3, Zap, Eye, TrendingUp } from 'lucide-react';
 import { isMarketOpen } from '../utils/globalUtils';
 
-const Header = ({ activeTab, setActiveTab, onOpenAI, aiStatus, onResetAIStatus }) => {
+const Header = ({ activeTab, setActiveTab, onOpenAI }) => {
   const marketOpen = isMarketOpen();
   const tabs = [
     { id: 'overview', label: 'Dashboard' },
@@ -12,35 +12,6 @@ const Header = ({ activeTab, setActiveTab, onOpenAI, aiStatus, onResetAIStatus }
     { id: 'ai-insights', label: 'AI Insights' },
     { id: 'browse', label: 'Browse Stocks' }
   ];
-
-  // Determine AI status display
-  const getAIStatusDisplay = () => {
-    if (aiStatus.hasError) {
-      const isApiKeyError = aiStatus.lastError?.toLowerCase().includes('api key');
-      return {
-        text: isApiKeyError ? 'No API Key' : 'AI Error',
-        className: 'ai-status-2025 error',
-        dotClassName: 'status-dot-2025 closed',
-        title: aiStatus.lastError || 'AI service encountered an error. Click to retry.'
-      };
-    } else if (!aiStatus.isActive) {
-      return {
-        text: 'AI Offline',
-        className: 'ai-status-2025 error',
-        dotClassName: 'status-dot-2025 closed',
-        title: 'AI service is not available. Click to retry.'
-      };
-    } else {
-      return {
-        text: 'AI Active',
-        className: 'ai-status-2025',
-        dotClassName: 'status-dot-2025',
-        title: 'AI service is active and ready'
-      };
-    }
-  };
-
-  const aiStatusDisplay = getAIStatusDisplay();
 
   return (
     <div className="header-2025">
@@ -56,14 +27,9 @@ const Header = ({ activeTab, setActiveTab, onOpenAI, aiStatus, onResetAIStatus }
         </div>
         
         <div className="header-actions-2025">
-          <div 
-            className={aiStatusDisplay.className}
-            title={aiStatusDisplay.title}
-            onClick={aiStatus.hasError ? onResetAIStatus : undefined}
-            style={{ cursor: aiStatus.hasError ? 'pointer' : 'default' }}
-          >
-            <div className={aiStatusDisplay.dotClassName}></div>
-            <span style={{fontSize: '13px'}}>{aiStatusDisplay.text}</span>
+          <div className="ai-status-2025">
+            <div className="status-dot-2025"></div>
+            <span style={{fontSize: '13px'}}>AI Active</span>
           </div>
           <div className={`ai-status-2025 ${marketOpen ? '' : 'closed'}`}>
             <div className={`status-dot-2025 ${marketOpen ? '' : 'closed'}`}></div>

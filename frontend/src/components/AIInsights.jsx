@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Eye, Plus, TrendingUp, TrendingDown, Star, Brain, Zap, Target } from 'lucide-react';
 import { 
   generateAIInsights, 
@@ -10,25 +10,19 @@ import {
 } from '../utils/globalUtils';
 
 const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, setActiveTab }) => {
-  // Memoize portfolio metrics calculation
-  const portfolioMetrics = useMemo(() => {
-    return portfolioData ? {
-      totalValue: portfolioData.totalValue || 0,
-      totalCost: portfolioData.totalInvested || 0,
-      totalGainPercent: portfolioData.totalInvested > 0 ? 
-        ((portfolioData.totalValue - portfolioData.totalInvested) / portfolioData.totalInvested) * 100 : 0,
-      holdingsCount: portfolio?.holdings?.length || 0
-    } : calculatePortfolioMetrics(portfolio);
-  }, [portfolio, portfolioData]);
+  // Use real portfolio data and AI services
+  const portfolioMetrics = portfolioData ? {
+    totalValue: portfolioData.totalValue || 0,
+    totalCost: portfolioData.totalInvested || 0,
+    totalGainPercent: portfolioData.totalInvested > 0 ? 
+      ((portfolioData.totalValue - portfolioData.totalInvested) / portfolioData.totalInvested) * 100 : 0,
+    holdingsCount: portfolio?.holdings?.length || 0
+  } : calculatePortfolioMetrics(portfolio);
 
-  // Memoize AI insights generation to prevent recalculation on every render
-  const aiInsights = useMemo(() => {
-    return generateAIInsights(portfolio, portfolioMetrics);
-  }, [portfolio, portfolioMetrics]);
-
-  // Memoize expensive calculations
-  const volatility = useMemo(() => calculatePortfolioVolatility(portfolio), [portfolio]);
-  const concentration = useMemo(() => calculatePortfolioConcentration(portfolio), [portfolio]);
+  // Generate real AI insights
+  const aiInsights = generateAIInsights(portfolio, portfolioMetrics);
+  const volatility = calculatePortfolioVolatility(portfolio);
+  const concentration = calculatePortfolioConcentration(portfolio);
   
   // Calculate real portfolio score based on multiple factors
   const calculatePortfolioScore = () => {
@@ -206,20 +200,16 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
 
       {/* AI Portfolio Optimizer Section */}
       <div className="card-2025 ai-optimizer-2025" style={{gridColumn: 'span 4'}}>
-        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>Portfolio Health</h3>
+        <h3 style={{fontSize: '18px', marginBottom: '20px'}}>AI Optimizer</h3>
         
         <div className="optimizer-metric-2025">
-          <div className="optimizer-label-2025">Health Score</div>
+          <div className="optimizer-label-2025">Portfolio Score</div>
           <div className="optimizer-score-2025">
             <span className="score-value-2025">{portfolioScore.toFixed(1)}</span>
             <span className="score-max-2025">/10</span>
           </div>
           <div className="optimizer-bar-2025">
-            <div className="optimizer-fill-2025" style={{
-              width: `${portfolioScore * 10}%`,
-              background: portfolioScore >= 7 ? 'var(--color-neon-green)' : 
-                         portfolioScore >= 4 ? 'var(--color-neon-yellow)' : 'var(--color-neon-red)'
-            }}></div>
+            <div className="optimizer-fill-2025" style={{width: `${portfolioScore * 10}%`}}></div>
           </div>
         </div>
 
@@ -235,22 +225,9 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
         </div>
 
         <div className="optimizer-action-2025">
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            alignItems: 'center',
-            padding: '12px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <span style={{fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)'}}>
-              {portfolioMetrics.holdingsCount > 0 ? 
-                `Based on ${portfolioMetrics.holdingsCount} holdings analysis` : 
-                'Add holdings to get personalized insights'
-              }
-            </span>
-          </div>
+          <button className="ai-action-btn-2025" onClick={() => setActiveTab && setActiveTab('browse')}>
+            {portfolioMetrics.holdingsCount > 0 ? 'Apply AI Recommendations' : 'Start Building Portfolio'}
+          </button>
         </div>
       </div>
 
@@ -350,6 +327,31 @@ const AIInsights = ({ portfolio, portfolioData, watchlist, setSelectedStock, set
             <Brain size={48} style={{marginBottom: '16px', opacity: 0.5}} />
             <h4 style={{marginBottom: '8px', color: 'white'}}>No Portfolio Data</h4>
             <p>Add holdings to your portfolio to receive comprehensive AI analysis and insights.</p>
+          </div>
+        )}
+
+        {/* AI Recommendations Actions */}
+        {portfolioMetrics.holdingsCount > 0 && (
+          <div style={{marginTop: '24px', padding: '20px', background: 'var(--color-surface)', borderRadius: '12px', border: '1px solid var(--color-border)'}}>
+            <h4 style={{marginBottom: '16px', color: 'var(--color-neon-green)'}}>Recommended Actions</h4>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px'}}>
+              <button className="ai-action-btn-2025" onClick={() => setActiveTab && setActiveTab('browse')}>
+                <Zap className="h-4 w-4" />
+                Browse Opportunities
+              </button>
+              <button className="ai-action-btn-2025" onClick={() => setActiveTab && setActiveTab('portfolio')}>
+                <Target className="h-4 w-4" />
+                View Holdings
+              </button>
+              <button className="ai-action-btn-2025" onClick={() => setActiveTab && setActiveTab('analytics')}>
+                <TrendingUp className="h-4 w-4" />
+                View Analytics
+              </button>
+              <button className="ai-action-btn-2025" onClick={() => setActiveTab && setActiveTab('overview')}>
+                <Brain className="h-4 w-4" />
+                Portfolio Overview
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -36,7 +36,7 @@ export const AI_SERVICES = {
 // Generate portfolio narrative summary
 export const generatePortfolioStory = async (portfolioData, performanceData, holdings) => {
   if (!isAPIKeyConfigured()) {
-    throw new Error(getConfigurationMessage());
+    return getConfigurationMessage();
   }
 
   console.log('Portfolio Storyteller Input:', { portfolioData, performanceData, holdings });
@@ -145,7 +145,7 @@ export const generatePortfolioStory = async (portfolioData, performanceData, hol
 // Generate rebalancing advice
 export const generateRebalanceAdvice = async (portfolioData, holdings) => {
   if (!isAPIKeyConfigured()) {
-    throw new Error(getConfigurationMessage());
+    return getConfigurationMessage();
   }
 
   const totalValue = portfolioData?.totalValue || 0;
@@ -220,7 +220,7 @@ export const generateRebalanceAdvice = async (portfolioData, holdings) => {
 // Generate tax-loss harvesting advice
 export const generateTaxLossAdvice = async (portfolioData, holdings) => {
   if (!isAPIKeyConfigured()) {
-    throw new Error(getConfigurationMessage());
+    return getConfigurationMessage();
   }
 
   const prompt = `
@@ -274,7 +274,7 @@ export const generateTaxLossAdvice = async (portfolioData, holdings) => {
 // Custom follow-up questions
 export const askFollowUpQuestion = async (originalResponse, question, context) => {
   if (!isAPIKeyConfigured()) {
-    throw new Error(getConfigurationMessage());
+    return getConfigurationMessage();
   }
 
   console.log('Follow-up question:', { question, context });

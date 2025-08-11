@@ -21,7 +21,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
     let maxLoss = Infinity;
 
     portfolio.holdings.forEach(stock => {
-      const shares = stock.shares || stock.quantity || stock.qty || 0;
+      const shares = stock.shares || stock.quantity || 0;
       const currentPrice = stock.current_price || stock.price || 0;
       const avgPrice = stock.avg_price || stock.average_cost || currentPrice;
       
@@ -50,11 +50,11 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
     <div className="dashboard-grid-2025">
       {/* Portfolio Overview - Top Row */}
       <div className="card-2025" style={{gridColumn: 'span 4'}}>
-        <div className="value-header-2025" style={{textAlign: 'center'}}>
+        <div className="value-header-2025">
           <div className="value-main-2025">
-            <h3 className="section-title-2025">Portfolio Value</h3>
+            <h3 className="section-title-2025">💼 Portfolio Value</h3>
             <div className="value-amount-2025">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div className="value-change-2025" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'}}>
+            <div className="value-change-2025">
               <span className={`change-badge-2025 ${totalGain >= 0 ? 'positive-2025' : 'negative-2025'}`}>
                 {totalGain >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                 {totalGain >= 0 ? '+' : ''}${Math.abs(totalGain).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -63,6 +63,10 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
                 {totalGainPercent >= 0 ? '+' : ''}{totalGainPercent.toFixed(2)}% Total Return
               </span>
             </div>
+          </div>
+          <div className="live-indicator-2025">
+            <div className="status-dot-2025"></div>
+            <span>LIVE</span>
           </div>
         </div>
       </div>
@@ -135,7 +139,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
       {/* Holdings Table */}
       <div className="card-2025" style={{gridColumn: 'span 12'}}>
         <div className="table-header-2025">
-          <h3 className="section-title-2025">Holdings Details</h3>
+          <h3 className="section-title-2025">📋 Holdings Details</h3>
           <div className="table-actions-2025">
             <button className="action-button-2025">
               <PieChart size={16} />
@@ -160,7 +164,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
           </div>
 
           {portfolio.holdings?.map((stock, index) => {
-            const shares = stock.shares || stock.quantity || stock.qty || 0;
+            const shares = stock.shares || stock.quantity || 0;
             const currentPrice = stock.current_price || stock.price || 0;
             const avgPrice = stock.avg_price || stock.average_cost || currentPrice;
             
