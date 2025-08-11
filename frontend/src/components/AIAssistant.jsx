@@ -111,158 +111,161 @@ const AIAssistant = ({ isOpen, onClose, portfolioData, performanceData, holdings
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+    <div className="stock-flyout-overlay-2025">
+      <div className="stock-flyout-container-2025">
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 p-6 border-b border-white/20">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Brain className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">AI Portfolio Assistant</h2>
-                <p className="text-white/70 text-sm">Powered by advanced AI analysis</p>
+        <div className="stock-flyout-header-2025">
+          <button
+            onClick={onClose}
+            className="stock-flyout-close-2025"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="stock-flyout-header-content-2025">
+            <div className="stock-flyout-header-left-2025">
+              <div className="stock-flyout-title-row-2025">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <Brain className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="stock-flyout-symbol-2025">AI Assistant</h2>
+                  <p className="stock-flyout-name-2025">Powered by advanced AI analysis</p>
+                </div>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/30"
-            >
-              <X className="h-5 w-5 text-white" />
-            </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex h-[600px]">
-          {/* Services Sidebar */}
-          <div className="w-80 bg-white/5 border-r border-white/20 p-4 overflow-y-auto">
-            <h3 className="text-lg font-semibold text-white mb-4">AI Services</h3>
-            <div className="space-y-3">
-              {services.map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => {
-                    setActiveService(service.id);
-                    service.action();
-                  }}
-                  disabled={loading}
-                  className={`w-full p-4 rounded-xl border transition-all duration-200 text-left group ${
-                    activeService === service.id
-                      ? 'bg-white/15 border-white/30'
-                      : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className={`w-10 h-10 bg-gradient-to-r ${service.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <service.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-semibold text-white text-sm group-hover:text-cyan-200 transition-colors">
-                        {service.title}
-                      </h4>
-                      <p className="text-white/60 text-xs mt-1 leading-relaxed">
-                        {service.description}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+        <div className="stock-flyout-body-2025">
+          <div className="grid grid-cols-12 gap-6 h-full">
+            {/* Services Sidebar - Narrower */}
+            <div className="col-span-3">
+              <section className="card-2025 stock-flyout-metrics-card-2025 h-full">
+                <h3 className="stock-flyout-section-title-2025">
+                  <Brain className="h-5 w-5" style={{color: 'var(--color-neon-blue)'}} />
+                  AI Services
+                </h3>
+                <ul className="stock-flyout-metrics-list-2025">
+                  {services.map((service) => (
+                    <li 
+                      key={service.id} 
+                      className={`stock-flyout-metric-item-2025 cursor-pointer transition-all duration-200 hover:bg-white/5 ${
+                        activeService === service.id ? 'bg-white/10' : ''
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (!loading) {
+                          setActiveService(service.id);
+                          service.action();
+                        }
+                      }}
+                    >
+                      <span className="stock-flyout-metric-label-2025 flex items-center">
+                        <div className={`w-6 h-6 bg-gradient-to-r ${service.color} rounded-lg flex items-center justify-center flex-shrink-0 mr-3`}>
+                          <service.icon className="h-3 w-3 text-white" />
+                        </div>
+                        <span>{service.title}</span>
+                      </span>
+                      <span className="stock-flyout-metric-value-2025">
+                        {activeService === service.id && loading ? (
+                          <Loader className="h-4 w-4 animate-spin" />
+                        ) : (
+                          '▶'
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             </div>
 
-            {(response || conversationHistory.length > 0) && (
-              <div className="mt-6 pt-4 border-t border-white/20">
-                <button
-                  onClick={resetConversation}
-                  className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-all duration-200 border border-white/20"
-                >
-                  Start New Conversation
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Response Area */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 p-6 overflow-y-auto">
-              {!response && !loading && (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <Brain className="h-16 w-16 text-white/40 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">AI Portfolio Assistant</h3>
-                    <p className="text-white/60 max-w-md">
-                      Select an AI service from the sidebar to get personalized insights about your portfolio.
-                      I can help you understand your performance, optimize your allocation, and identify tax opportunities.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Conversation History */}
-              {conversationHistory.length > 0 && (
-                <div className="space-y-4">
-                  {conversationHistory.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] p-4 rounded-2xl ${
-                          message.type === 'user'
-                            ? 'bg-blue-500/20 border border-blue-400/30'
-                            : 'bg-white/10 border border-white/20'
-                        }`}
-                      >
-                        {message.type === 'ai' && message.service && (
-                          <div className="flex items-center space-x-2 mb-2 pb-2 border-b border-white/20">
-                            <MessageCircle className="h-4 w-4 text-blue-400" />
-                            <span className="text-blue-400 text-sm font-medium">{message.service}</span>
-                          </div>
-                        )}
-                        <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
-                          {message.content}
+            {/* Response Area - Wider */}
+            <div className="col-span-9">
+              <section className="card-2025 stock-flyout-trade-card-2025" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+                <h3 className="stock-flyout-section-title-2025">
+                  <MessageCircle className="h-5 w-5" style={{color: 'var(--color-neon-green)'}} />
+                  AI Conversation
+                </h3>
+                
+                <div className="flex-1 overflow-y-auto" style={{ minHeight: 0, padding: 0 }}>
+                  {!response && !loading && (
+                    <div className="h-full flex items-center justify-center px-6">
+                      <div className="text-center">
+                        <Brain className="h-16 w-16 text-white/40 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-white mb-2">AI Portfolio Assistant</h3>
+                        <p className="text-white/60 max-w-md">
+                          Select an AI service from the sidebar to get personalized insights about your portfolio.
+                          I can help you understand your performance, optimize your allocation, and identify tax opportunities.
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {/* Loading indicator - positioned after conversation history */}
-              {loading && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-center">
-                    <Loader className="h-8 w-8 text-blue-400 animate-spin mx-auto mb-4" />
-                    <p className="text-white/70">Analyzing your portfolio...</p>
-                  </div>
+                  {/* Conversation History */}
+                  {conversationHistory.length > 0 && (
+                    <div className="space-y-6" style={{ padding: '24px' }}>
+                      {conversationHistory.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-2xl ${
+                              message.type === 'user'
+                                ? 'bg-blue-500/20 border border-blue-400/30'
+                                : 'bg-white/10 border border-white/20'
+                            }`}
+                            style={{ padding: '32px' }}
+                          >
+                            {message.type === 'ai' && message.service && (
+                              <div className="flex items-center space-x-2 mb-4 pb-4 border-b border-white/20">
+                                <MessageCircle className="h-4 w-4 text-blue-400" />
+                                <span className="text-blue-400 text-sm font-medium">{message.service}</span>
+                              </div>
+                            )}
+                            <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+                              {message.content}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Loading indicator */}
+                  {loading && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <Loader className="h-8 w-8 text-blue-400 animate-spin mx-auto mb-4" />
+                        <p className="text-white/70">Analyzing your portfolio...</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Follow-up Question Input - Always Visible */}
+                <div className="p-4 border-t border-white/20 bg-white/5 flex-shrink-0">
+                  <form onSubmit={handleFollowUpQuestion} className="flex space-x-3">
+                    <input
+                      type="text"
+                      value={followUpQuestion}
+                      onChange={(e) => setFollowUpQuestion(e.target.value)}
+                      placeholder="Ask a follow-up question about your portfolio..."
+                      className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent"
+                      disabled={loading}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!followUpQuestion.trim() || loading}
+                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span>Ask</span>
+                    </button>
+                  </form>
+                </div>
+              </section>
             </div>
-
-            {/* Follow-up Question Input */}
-            {response && !loading && (
-              <div className="p-4 border-t border-white/20 bg-white/5">
-                <form onSubmit={handleFollowUpQuestion} className="flex space-x-3">
-                  <input
-                    type="text"
-                    value={followUpQuestion}
-                    onChange={(e) => setFollowUpQuestion(e.target.value)}
-                    placeholder="Ask a follow-up question about your portfolio..."
-                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!followUpQuestion.trim() || loading}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2"
-                  >
-                    <Send className="h-4 w-4" />
-                    <span>Ask</span>
-                  </button>
-                </form>
-              </div>
-            )}
           </div>
         </div>
       </div>

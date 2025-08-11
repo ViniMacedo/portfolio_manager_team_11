@@ -84,25 +84,55 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
       // Only reset if mode actually changes
       if (mode !== newMode) {
         setMode(newMode);
-        
-        // Don't clear symbols immediately to prevent flicker
         setLoadingSymbols(true);
         
-        if (newMode === "feed") {
+        // Load new data first, then replace old data to prevent flicker
+        try {
+          let newData;
+          if (newMode === "feed") {
+            newData = await discoverSymbolsPaged({ cursor: null, limit: 100 });
+          } else {
+            newData = await searchSymbolsPaged({ q: qtrim, cursor: null, limit: 500 });
+          }
+          
+          // Replace all data at once to prevent flicker
+          setSymbols(newData.items);
+          setCursor(newData.nextCursor);
+          setHasMore(!!newData.nextCursor);
+          
+          // Clear caches after setting new data
+          detailsCache.current.clear();
+          setLoadingDetailsMap(new Map());
+          setErrorDetailsMap(new Map());
+        } catch (error) {
+          console.error('Error switching modes:', error);
           resetLists();
-          await loadMoreFeed(null);          // PRELOAD first page
-        } else {
-          resetLists();
-          await loadMoreSearch(qtrim, null); // PRELOAD first search page
+        } finally {
+          setLoadingSymbols(false);
         }
       } else if (newMode === "search") {
-        // Same search mode but different query - show loading but keep old results briefly
+        // Same search mode but different query - load new results smoothly
         setLoadingSymbols(true);
-        resetLists();
-        await loadMoreSearch(qtrim, null);
+        try {
+          const newData = await searchSymbolsPaged({ q: qtrim, cursor: null, limit: 500 });
+          
+          // Replace data smoothly
+          setSymbols(newData.items);
+          setCursor(newData.nextCursor);
+          setHasMore(!!newData.nextCursor);
+          
+          // Clear caches
+          detailsCache.current.clear();
+          setLoadingDetailsMap(new Map());
+          setErrorDetailsMap(new Map());
+        } catch (error) {
+          console.error('Error searching:', error);
+        } finally {
+          setLoadingSymbols(false);
+        }
       }
     }, 300),
-  [resetLists, loadMoreFeed, loadMoreSearch, mode]);
+  [resetLists, mode]);
 
   // Load initial feed on component mount
   useEffect(() => {
@@ -329,7 +359,7 @@ const BrowseStocks = ({ searchQuery, setSearchQuery, setSelectedStock }) => {
                                 className="mover-card-2025" 
                                 onClick={() => handleCardClick(item)}
                                 style={{ 
-                                  opacity: loadingSymbols ? 0.6 : 1,
+                                  cursor: 'pointer',
                                   transition: 'opacity 0.2s ease'
                                 }}
                               >
