@@ -113,7 +113,7 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                     ['Market Cap', stock.marketCap],
                     ['Volume', stock.volume],
                     ['Sector', stock.sector || 'Technology'],
-                    ['P/E Ratio', stock.peRatio ? stock.peRatio.toFixed(2) : 'N/A'],
+                    ['P/E Ratio', (stock.peRatio && typeof stock.peRatio === 'number') ? stock.peRatio.toFixed(2) : (stock.peRatio || 'N/A')],
                     ['52W Low', (stock.fiftyTwoWeekLow && stock.fiftyTwoWeekLow !== 'N/A') ? formatCurrency(safeNumber(stock.fiftyTwoWeekLow)) : 'N/A'],
                     ['52W High', (stock.fiftyTwoWeekHigh && stock.fiftyTwoWeekHigh !== 'N/A') ? formatCurrency(safeNumber(stock.fiftyTwoWeekHigh)) : 'N/A'],
                     ['Dividend', formatCurrency(safeNumber(stock.dividend, 0))],
