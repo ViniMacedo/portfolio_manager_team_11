@@ -30,8 +30,8 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
   const currentHolding = holdings.find(h => h.symbol === stock.symbol);
   const currentShares = safeNumber(currentHolding?.shares, 0);
   const stockPrice = safeNumber(stock.price, 0);
-  const stockChange = safeNumber(stock.change, 0);
-  const changePct = safeNumber(stock.changePercent, 0);
+  const stockChange = safeNumber((stock.change / 100) * stock.price, 0);
+  const changePct = safeNumber(stock.change, 0);
   const totalPrice = stockPrice * quantity;
   const positionValue = currentShares * stockPrice;
   const balance = safeNumber(userBalance, 0);
@@ -106,10 +106,10 @@ const StockFlyout = ({ stock, onClose, onTradeStock, holdings = [], userBalance 
                 </h3>
                 <ul className="stock-flyout-metrics-list-2025">
                   {[
-                    ['Market Cap', formatMarketCap(stock.marketCap)],
-                    ['Volume', formatVolume(stock.volume)],
+                    ['Market Cap', stock.marketCap],
+                    ['Volume', stock.volume],
                     ['Sector', stock.sector || 'Technology'],
-                    ['P/E Ratio', (stock.peRatio && stock.peRatio !== 'N/A') ? safeNumber(stock.peRatio).toFixed(2) : 'N/A'],
+                    ['P/E Ratio', stock.peRatio ? stock.peRatio.toFixed(2) : 'N/A'],
                     ['52W Low', (stock.fiftyTwoWeekLow && stock.fiftyTwoWeekLow !== 'N/A') ? formatCurrency(safeNumber(stock.fiftyTwoWeekLow)) : 'N/A'],
                     ['52W High', (stock.fiftyTwoWeekHigh && stock.fiftyTwoWeekHigh !== 'N/A') ? formatCurrency(safeNumber(stock.fiftyTwoWeekHigh)) : 'N/A'],
                     ['Dividend', formatCurrency(safeNumber(stock.dividend, 0))],

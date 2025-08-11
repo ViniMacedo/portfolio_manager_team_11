@@ -1,4 +1,4 @@
-import yfinance_cache as yf
+import yfinance as yf
 from flask_restful import Resource
 from requests.exceptions import HTTPError
 from datetime import datetime, timedelta, timezone
