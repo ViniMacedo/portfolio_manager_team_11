@@ -1,6 +1,8 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, PieChart, Activity, BarChart3, DollarSign } from 'lucide-react';
 import { formatCurrency, formatPercentage } from '../utils/globalUtils';
+import { fetchStockBySymbol } from '../services/api';
+
 
 const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
   // Use real portfolio data passed from parent (same as Overview and Analytics)
@@ -45,6 +47,54 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
   };
 
   const { topPerformer, worstPerformer } = getPerformers();
+
+  const handleHoldingClick = async (holding) => {
+      try {
+        const symbol = holding.symbol;
+        if (!symbol) return;
+  
+        // Fetch real-time data for the stock
+        const stockData = await fetchStockBySymbol(symbol);
+        setSelectedStock({
+          symbol: symbol,
+          name: stockData.name || `${symbol} Inc`,
+          price: stockData.price || holding.current_price || 0,
+          change: stockData.change || 0,
+          changePercent: stockData.changePercent || 0,
+          volume: stockData.volume || 'N/A',
+          marketCap: stockData.marketCap || 'N/A',
+          sector: stockData.sector || 'Technology',
+          peRatio: stockData.peRatio || 'N/A',
+          fiftyTwoWeekLow: stockData.fiftyTwoWeekLow || 'N/A',
+          fiftyTwoWeekHigh: stockData.fiftyTwoWeekHigh || 'N/A',
+          dividend: stockData.dividend || 0,
+          color: (stockData.change || 0) >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+        });
+      } catch (error) {
+        console.error('Error fetching stock details for holding:', error);
+        // Still open with basic info from holding
+        const symbol = holding.symbol;
+        const currentPrice = holding.current_price || 0;
+        const avgPrice = safeNumber(holding.avg_price, 0);
+        const changePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
+        
+        setSelectedStock({
+          symbol: symbol,
+          name: `${symbol} Inc`,
+          price: currentPrice,
+          change: currentPrice - avgPrice,
+          changePercent: changePercent,
+          volume: 'N/A',
+          marketCap: 'N/A',
+          sector: 'Unknown',
+          peRatio: 'N/A',
+          fiftyTwoWeekLow: 'N/A',
+          fiftyTwoWeekHigh: 'N/A',
+          dividend: 0,
+          color: changePercent >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+        });
+      }
+    };
 
   return (
     <div className="dashboard-grid-2025">
@@ -179,14 +229,7 @@ const Portfolio = ({ portfolio, portfolioData, setSelectedStock }) => {
               <div 
                 key={stock.symbol || index} 
                 className="table-row-2025"
-                onClick={() => setSelectedStock && setSelectedStock({
-                  symbol: stock.symbol,
-                  name: stock.name || stock.symbol,
-                  price: currentPrice,
-                  change: currentPrice - avgPrice,
-                  changePercent: gainLossPercent.toFixed(2),
-                  color: isPositive ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
-                })}
+                onClick={() =>handleHoldingClick(stock)}
               >
                 <div className="table-cell-2025">
                   <div className="symbol-cell-2025">
