@@ -1,4 +1,4 @@
-/* Global Glassmorphism Styles - Fixed Utility Classes */
+Global Glassmorphism Styles - Fixed Utility Classes
 
 /* Base glassmorphism containers */
 .glass-container {
@@ -23,7 +23,7 @@
 }
 
 .glass-button-primary {
-  @apply bg-gradient-to-r from-blue-500/80 to-purple-500/80 hover:from-blue-600/90 hover:to-purple-600/90 text-white rounded-xl px-6 py-3 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl backdrop-blur-sm border border-white/20;
+  @apply bg-gradient-to-r from-indigo-500/80 to-violet-500/80 hover:from-indigo-600/90 hover:to-violet-600/90 text-white rounded-xl px-6 py-3 font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl backdrop-blur-sm border border-white/20;
 }
 
 .glass-button-secondary {
@@ -62,7 +62,7 @@
 
 /* Search Header Styles */
 .glass-search-header {
-  @apply relative bg-gradient-to-r from-purple-500/20 to-indigo-500/20 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl border border-white/30 overflow-hidden;
+  @apply relative bg-gradient-to-r from-indigo-500/20 to-violet-500/20 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl border border-white/30 overflow-hidden;
 }
 
 .glass-search-icon-container {
@@ -151,7 +151,7 @@
 }
 
 .glass-load-more {
-  @apply bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600/90 hover:to-indigo-600/90 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95 shadow-2xl hover:shadow-2xl backdrop-blur-xl border border-white/20;
+  @apply bg-gradient-to-r from-indigo-500/90 to-violet-500/90 hover:from-indigo-600/90 hover:to-violet-600/90 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95 shadow-2xl hover:shadow-2xl backdrop-blur-xl border border-white/20;
 }
 
 .glass-end-message {
@@ -238,4 +238,30 @@
   .glass-search-icon-container {
     @apply w-16 h-16 rounded-2xl;
   }
+}
+
+/* Custom Scrollbar for Glassmorphism Design */
+.custom-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
+}
+
+
+/* Stock Ticker Animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 60s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
 }

@@ -1,53 +1,141 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { searchSymbols, fetchStockBySymbol } from '../services/api';
 
-export default function StockTicker() {
+export default function StockTicker({ setSelectedStock }) {
   const [stocks, setStocks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const updateIntervalRef = useRef(null);
+
+  // Popular stocks to track
+  const popularStocks = [
+    'AAPL', 'GOOGL', 'MSFT', 'TSLA', 'NVDA', 
+    'AMZN', 'META', 'NFLX', 'CRM', 'UBER', 
+    'COIN', 'PYPL', 'SPOT', 'AMD', 'INTC'
+  ];
+
+  const fetchStockData = async () => {
+    try {
+      console.log('Fetching stock ticker data...');
+      const stockPromises = popularStocks.map(async (symbol) => {
+        try {
+          const data = await fetchStockBySymbol(symbol);
+          return {
+            symbol: symbol,
+            name: data.name || symbol,
+            price: data.price || 0,
+            change: data.change || 0,
+            changePercent: data.changePercent || (data.change ? ((data.change / data.price) * 100) : 0),
+            volume: data.volume || 'N/A',
+            marketCap: data.marketCap || 'N/A',
+            sector: data.sector || 'Technology'
+          };
+        } catch (error) {
+          console.error(`Error fetching ${symbol}:`, error);
+          // Return fallback data for failed requests
+          return {
+            symbol: symbol,
+            name: symbol,
+            price: 0,
+            change: 0,
+            changePercent: 0,
+            volume: 'N/A',
+            marketCap: 'N/A',
+            sector: 'Technology'
+          };
+        }
+      });
+
+      const stockData = await Promise.all(stockPromises);
+      // Filter out any stocks that failed to load (price = 0)
+      const validStocks = stockData.filter(stock => stock.price > 0);
+      
+      console.log('Updated stock ticker with', validStocks.length, 'stocks');
+      setStocks(validStocks);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error updating stock ticker:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleStockClick = (stock) => {
+    if (setSelectedStock) {
+      setSelectedStock({
+        symbol: stock.symbol,
+        name: stock.name,
+        price: stock.price,
+        change: stock.change,
+        changePercent: stock.changePercent,
+        volume: stock.volume,
+        marketCap: stock.marketCap,
+        sector: stock.sector,
+        peRatio: 'N/A',
+        fiftyTwoWeekLow: 'N/A',
+        fiftyTwoWeekHigh: 'N/A',
+        dividend: 0,
+        color: stock.change >= 0 ? 'from-green-400 to-green-600' : 'from-red-400 to-red-600'
+      });
+    }
+  };
 
   useEffect(() => {
-    // Mock stock data for the ticker, this is just for fun, can improve later
-    const mockStockData = [
-      { symbol: 'AAPL', price: 189.95, changePercent: 2.35 },
-      { symbol: 'GOOGL', price: 2847.12, changePercent: -1.22 },
-      { symbol: 'MSFT', price: 378.85, changePercent: 0.89 },
-      { symbol: 'TSLA', price: 248.42, changePercent: 4.67 },
-      { symbol: 'NVDA', price: 875.32, changePercent: 3.21 },
-      { symbol: 'AMZN', price: 3205.67, changePercent: -0.55 },
-      { symbol: 'META', price: 498.73, changePercent: 1.88 },
-      { symbol: 'NFLX', price: 445.29, changePercent: -2.14 },
-      { symbol: 'CRM', price: 267.85, changePercent: 1.45 },
-      { symbol: 'UBER', price: 62.41, changePercent: 2.87 },
-      { symbol: 'COIN', price: 234.56, changePercent: -3.42 },
-      { symbol: 'PYPL', price: 58.92, changePercent: 0.73 },
-      { symbol: 'SPOT', price: 267.89, changePercent: 1.92 },
-      { symbol: 'AMD', price: 152.43, changePercent: -0.87 },
-      { symbol: 'INTC', price: 42.15, changePercent: 3.44 }
-    ];
-    
-    setStocks(mockStockData);
+    // Initial load
+    fetchStockData();
+
+    // Set up interval to update every 30 seconds
+    updateIntervalRef.current = setInterval(() => {
+      fetchStockData();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => {
+      if (updateIntervalRef.current) {
+        clearInterval(updateIntervalRef.current);
+      }
+    };
   }, []);
 
-  return (
-    <div className="bg-white/5 backdrop-blur-xl border-t border-white/10 border-b border-white/20 overflow-hidden relative">
-      {/* Glassmorphism gradient overlay that matches header */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5"></div>
-      <div className="absolute top-0 left-0 w-64 h-full bg-gradient-to-r from-white/3 to-transparent"></div>
-      <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-white/3 to-transparent"></div>
-      
-      <div className="relative z-10 py-2">
-        <div className="animate-scroll whitespace-nowrap">
-          <div className="inline-flex space-x-6 px-4">
-            {/* Duplicate the stocks for seamless loop */}
-            {[...stocks, ...stocks].map((s, index) => (
-              <div key={`${s.symbol}-${index}`} className="flex items-center space-x-2 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-200">
-                <span className="font-bold text-blue-300 text-sm">{s.symbol}</span>
-                <span className="text-white font-medium text-sm">${s.price.toFixed(2)}</span>
-                <span className={`font-semibold px-1.5 py-0.5 rounded-md text-xs ${s.changePercent >= 0 ? 'text-green-300 bg-green-500/20' : 'text-red-300 bg-red-500/20'}`}>
-                  {s.changePercent >= 0 ? '+' : ''}{s.changePercent.toFixed(2)}%
-                </span>
-              </div>
-            ))}
-          </div>
+  // Show loading state with placeholder data
+  if (loading || stocks.length === 0) {
+    const placeholderStocks = popularStocks.slice(0, 8).map(symbol => ({
+      symbol,
+      price: 0,
+      changePercent: 0
+    }));
+
+    return (
+      <div className="stock-ticker-2025">
+        <div className="ticker-scroll-2025">
+          {[...placeholderStocks, ...placeholderStocks, ...placeholderStocks, ...placeholderStocks].map((stock, index) => (
+            <div key={`${stock.symbol}-${index}`} className="ticker-item-2025" style={{opacity: 0.5}}>
+              <span className="ticker-symbol-2025">{stock.symbol}</span>
+              <span className="ticker-price-2025">Loading...</span>
+              <span className="ticker-change-2025">--</span>
+            </div>
+          ))}
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="stock-ticker-2025">
+      <div className="ticker-scroll-2025">
+        {/* Create enough copies for truly seamless infinite loop */}
+        {[...stocks, ...stocks, ...stocks, ...stocks].map((stock, index) => (
+          <div 
+            key={`${stock.symbol}-${index}`} 
+            className="ticker-item-2025"
+            onClick={() => handleStockClick(stock)}
+            style={{ cursor: 'pointer' }}
+          >
+            <span className="ticker-symbol-2025">{stock.symbol}</span>
+            <span className="ticker-price-2025">${stock.price.toFixed(2)}</span>
+            <span className={`ticker-change-2025 ${stock.changePercent >= 0 ? 'positive-2025' : 'negative-2025'}`}>
+              {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(1)}%
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

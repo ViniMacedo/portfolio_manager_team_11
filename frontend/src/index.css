@@ -1,6 +1,29 @@
 @import "tailwindcss";
 @import "./styles/glassmorphism.css";
 
+/* OVERRIDE TAILWIND SCROLLBAR STYLES */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  background: transparent !important;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+  display: none !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  display: none !important;
+}
+
+/* Test to ensure styles are loading */
 .ticker {
   background: #1e293b; 
   color: white;
@@ -12,7 +35,7 @@
 .ticker-content {
   display: inline-block;
   padding-left: 100%;
-  animation: ticker 20s linear infinite;
+  animation: ticker 2s linear infinite;
 }
 
 @keyframes ticker {
@@ -22,7 +45,7 @@
 
 /* Stock Ticker Animation */
 .animate-scroll {
-  animation: scroll 60s linear infinite;
+  animation: scroll 20s linear infinite;
 }
 
 @keyframes scroll {
