@@ -189,29 +189,27 @@ const Overview = ({ portfolioData, portfolio, setActiveTab, setSelectedStock }) 
       let maxGain = -Infinity;
       let maxLoss = Infinity;
 
-      // Get current prices for all holdings and calculate performance
-      for (const holding of portfolio.holdings) {
-        try {
-          const currentPrice = holding.current_price || 0;
-          const avgPrice = safeNumber(holding.avg_price, 0);
-          const performancePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
-          const symbol = holding.symbol || 'Unknown';
+        // Get current prices for all holdings and calculate performance
+        for (const holding of portfolio.holdings) {
+          try {
+            const currentPrice = holding.current_price || 0;
+            const avgPrice = safeNumber(holding.avg_price, 0);
+            const performancePercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
+            const symbol = holding.symbol || 'Unknown';
 
-          if (performancePercent > maxGain) {
-            maxGain = performancePercent;
-            bestPerformer = { ...holding, performancePercent, symbol: symbol };
+            if (performancePercent > maxGain) {
+              maxGain = performancePercent;
+              bestPerformer = { ...holding, performancePercent, symbol: symbol };
+            }
+
+            if (performancePercent < maxLoss) {
+              maxLoss = performancePercent;
+              worstPerformer = { ...holding, performancePercent, symbol: symbol };
+            }
+          } catch (error) {
+            console.error(`Error calculating performance for ${holding.symbol || 'unknown holding'}:`, error);
           }
-
-          if (performancePercent < maxLoss) {
-            maxLoss = performancePercent;
-            worstPerformer = { ...holding, performancePercent, symbol: symbol };
-          }
-        } catch (error) {
-          console.error(`Error calculating performance for ${holding.symbol || 'unknown holding'}:`, error);
-        }
-      }
-
-      // Calculate comprehensive risk metrics
+        }      // Calculate comprehensive risk metrics
       const calculateRiskMetrics = () => {
         let totalVolatility = 0;
         let maxConcentration = 0;

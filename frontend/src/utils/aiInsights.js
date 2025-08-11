@@ -199,10 +199,27 @@ export class AIInsightsGenerator {
       return this.getRandomInsight('performance', 'loading');
     }
     
+    // Get symbol with multiple fallbacks - use safeSymbol if available
+    const symbol = bestPerformer.product_symbol || 
+                   bestPerformer.symbol || 
+                   bestPerformer.stock_symbol || 
+                   bestPerformer.ticker || 
+                   'Unknown Stock';
+    
+    // Get performance with multiple fallbacks and safe number conversion
+    const performanceKeys = ['performancePercent', 'changePercent', 'change_percent', 'gain_loss_percent'];
+    let performance = 0;
+    for (const key of performanceKeys) {
+      if (bestPerformer[key] !== undefined && bestPerformer[key] !== null && !isNaN(bestPerformer[key])) {
+        performance = Number(bestPerformer[key]);
+        break;
+      }
+    }
+    
     const insight = this.getRandomInsight('performance', 'hasPerformer');
     return insight
-      .replace('{symbol}', bestPerformer.product_symbol)
-      .replace('{performance}', `${bestPerformer.performancePercent >= 0 ? '+' : ''}${bestPerformer.performancePercent.toFixed(1)}%`);
+      .replace('{symbol}', symbol)
+      .replace('{performance}', `${performance >= 0 ? '+' : ''}${performance.toFixed(1)}%`);
   }
 
   /**

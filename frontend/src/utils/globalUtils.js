@@ -90,6 +90,7 @@ export const formatLargeNumber = (value, decimals = 1) => {
  * @returns {number} Number of shares
  */
 export const getShares = (stock) => {
+  if (!stock) return 0;
   return Number(stock?.shares || stock?.quantity || 0);
 };
 
@@ -99,6 +100,7 @@ export const getShares = (stock) => {
  * @returns {number} Current price
  */
 export const getCurrentPrice = (stock) => {
+  if (!stock) return 0;
   return Number(stock?.current_price || stock?.price || 0);
 };
 
@@ -108,6 +110,7 @@ export const getCurrentPrice = (stock) => {
  * @returns {number} Average purchase price
  */
 export const getAveragePrice = (stock) => {
+  if (!stock) return 0;
   const currentPrice = getCurrentPrice(stock);
   return Number(stock?.avg_price || stock?.average_cost || currentPrice);
 };
@@ -186,11 +189,21 @@ export const calculatePortfolioMetrics = (portfolio) => {
     // Track best and worst performers
     if (gainLossPercent > bestPerformance) {
       bestPerformance = gainLossPercent;
-      topPerformer = { ...stock, changePercent: gainLossPercent, value: marketValue };
+      topPerformer = { 
+        ...stock, 
+        symbol: safeSymbol(stock),
+        changePercent: gainLossPercent, 
+        value: marketValue 
+      };
     }
     if (gainLossPercent < worstPerformance) {
       worstPerformance = gainLossPercent;
-      worstPerformer = { ...stock, changePercent: gainLossPercent, value: marketValue };
+      worstPerformer = { 
+        ...stock, 
+        symbol: safeSymbol(stock),
+        changePercent: gainLossPercent, 
+        value: marketValue 
+      };
     }
   });
 
@@ -443,11 +456,14 @@ export const generateAIInsights = (portfolio, metrics = null) => {
 
   // Add top performer insight if available
   if (portfolioMetrics.topPerformer && portfolioMetrics.bestPerformance) {
+    const symbol = safeSymbol(portfolioMetrics.topPerformer);
+    const performance = safeNumber(portfolioMetrics.bestPerformance, 0);
+    
     insights.push({
       type: 'success',
       icon: '🏆',
       title: 'Top Performer',
-      message: `${portfolioMetrics.topPerformer.symbol} leading with ${portfolioMetrics.bestPerformance.toFixed(1)}% gain.`
+      message: `${symbol} leading with ${performance.toFixed(1)}% gain.`
     });
   }
 
@@ -519,6 +535,39 @@ export const safeNumber = (value, fallback = 0) => {
   return isNaN(num) ? fallback : num;
 };
 
+/**
+ * Safely extracts symbol from stock object with multiple fallbacks
+ * @param {Object} stock - Stock object
+ * @param {string} fallback - Fallback value (default: 'Unknown')
+ * @returns {string} Stock symbol or fallback
+ */
+export const safeSymbol = (stock, fallback = 'Unknown') => {
+  if (!stock) return fallback;
+  return stock.symbol || 
+         stock.stock_symbol || 
+         stock.product_symbol || 
+         stock.ticker || 
+         stock.name || 
+         fallback;
+};
+
+/**
+ * Safely extracts percentage value with fallbacks
+ * @param {Object} obj - Object containing percentage
+ * @param {string[]} keys - Array of possible keys to check
+ * @param {number} fallback - Fallback value (default: 0)
+ * @returns {number} Percentage value or fallback
+ */
+export const safePercentage = (obj, keys = [], fallback = 0) => {
+  if (!obj) return fallback;
+  for (const key of keys) {
+    if (obj[key] !== undefined && obj[key] !== null && !isNaN(obj[key])) {
+      return Number(obj[key]);
+    }
+  }
+  return fallback;
+};
+
 // =============================================================================
 // EXPORT DEFAULTS
 // =============================================================================
@@ -555,5 +604,7 @@ export default {
   isMarketOpen,
   isValidPositiveNumber,
   isValidStockSymbol,
-  safeNumber
+  safeNumber,
+  safeSymbol,
+  safePercentage
 };
